@@ -25,7 +25,7 @@ function About() {
           <p>Based in the United Kingdom, we design Indian modern and traditional fashion — from easy daily wear to unforgettable bridal outfits — celebrating thread work, mirror work, Aari work and hand embroidery.</p>
           <p>Every piece can be personalised and made to measure, because we believe beautiful clothing should be made for you. We ship worldwide, bringing heritage craft to wherever you call home.</p>
         </div>
-        <img src={categories[6].image} alt="Hand embroidery" loading="lazy" className="w-full aspect-[4/5] object-cover" />
+        <img src={categories[6]!.image} alt="Hand embroidery" loading="lazy" className="w-full aspect-[4/5] object-cover" />
       </div>
     </div>
   );

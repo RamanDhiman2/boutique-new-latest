@@ -29,7 +29,7 @@ export const Route = createFileRoute("/product/$id")({
 
 function ProductPage() {
   const { product: p } = Route.useLoaderData();
-  const [size, setSize] = useState(p.sizes[0]);
+  const [size, setSize] = useState(p.sizes[0] ?? "Custom");
   const { add, toggleWish, wishlist } = useCart();
   const cat = categories.find((c) => c.slug === p.category)!;
   useReveal();

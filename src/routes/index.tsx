@@ -78,14 +78,14 @@ function Home() {
       {/* New */}
       <Section eyebrow="New & Noteworthy" title="Discover our latest designs.">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-12">
-          {[products[2], products[8], products[10], products[12]].map((p) => <ProductCard key={p.id} p={p} />)}
+          {[products[2]!, products[8]!, products[10]!, products[12]!].map((p) => <ProductCard key={p.id} p={p} />)}
         </div>
       </Section>
 
       {/* Bridal feature */}
       <section className="bg-primary text-primary-foreground my-24">
         <div className="mx-auto max-w-[1500px] grid md:grid-cols-2">
-          <img src={categories[0].image} alt="Bridal" loading="lazy" className="w-full h-full max-h-[760px] object-cover reveal" />
+          <img src={categories[0]!.image} alt="Bridal" loading="lazy" className="w-full h-full max-h-[760px] object-cover reveal" />
           <div className="p-10 md:p-20 flex flex-col justify-center reveal">
             <div className="eyebrow text-gold">The Bridal Edit</div>
             <h2 className="mt-5 text-5xl md:text-6xl">For the moment you'll remember forever.</h2>
