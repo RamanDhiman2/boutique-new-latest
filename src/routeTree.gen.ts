@@ -10,33 +10,154 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AboutRouteImport } from './routes/about'
+import { Route as BagRouteImport } from './routes/bag'
+import { Route as ContactRouteImport } from './routes/contact'
+import { Route as CustomDesignsRouteImport } from './routes/custom-designs'
+import { Route as MeasurementsRouteImport } from './routes/measurements'
+import { Route as ShippingRouteImport } from './routes/shipping'
+import { Route as ShopRouteImport } from './routes/shop'
+import { Route as CollectionsSlugRouteImport } from './routes/collections.$slug'
+import { Route as ProductIdRouteImport } from './routes/product.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AboutRoute = AboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BagRoute = BagRouteImport.update({
+  id: '/bag',
+  path: '/bag',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ContactRoute = ContactRouteImport.update({
+  id: '/contact',
+  path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CustomDesignsRoute = CustomDesignsRouteImport.update({
+  id: '/custom-designs',
+  path: '/custom-designs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeasurementsRoute = MeasurementsRouteImport.update({
+  id: '/measurements',
+  path: '/measurements',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShippingRoute = ShippingRouteImport.update({
+  id: '/shipping',
+  path: '/shipping',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShopRoute = ShopRouteImport.update({
+  id: '/shop',
+  path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CollectionsSlugRoute = CollectionsSlugRouteImport.update({
+  id: '/collections/$slug',
+  path: '/collections/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProductIdRoute = ProductIdRouteImport.update({
+  id: '/product/$id',
+  path: '/product/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/bag': typeof BagRoute
+  '/contact': typeof ContactRoute
+  '/custom-designs': typeof CustomDesignsRoute
+  '/measurements': typeof MeasurementsRoute
+  '/shipping': typeof ShippingRoute
+  '/shop': typeof ShopRoute
+  '/collections/$slug': typeof CollectionsSlugRoute
+  '/product/$id': typeof ProductIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/bag': typeof BagRoute
+  '/contact': typeof ContactRoute
+  '/custom-designs': typeof CustomDesignsRoute
+  '/measurements': typeof MeasurementsRoute
+  '/shipping': typeof ShippingRoute
+  '/shop': typeof ShopRoute
+  '/collections/$slug': typeof CollectionsSlugRoute
+  '/product/$id': typeof ProductIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/about': typeof AboutRoute
+  '/bag': typeof BagRoute
+  '/contact': typeof ContactRoute
+  '/custom-designs': typeof CustomDesignsRoute
+  '/measurements': typeof MeasurementsRoute
+  '/shipping': typeof ShippingRoute
+  '/shop': typeof ShopRoute
+  '/collections/$slug': typeof CollectionsSlugRoute
+  '/product/$id': typeof ProductIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/about'
+    | '/bag'
+    | '/contact'
+    | '/custom-designs'
+    | '/measurements'
+    | '/shipping'
+    | '/shop'
+    | '/collections/$slug'
+    | '/product/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/about'
+    | '/bag'
+    | '/contact'
+    | '/custom-designs'
+    | '/measurements'
+    | '/shipping'
+    | '/shop'
+    | '/collections/$slug'
+    | '/product/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/about'
+    | '/bag'
+    | '/contact'
+    | '/custom-designs'
+    | '/measurements'
+    | '/shipping'
+    | '/shop'
+    | '/collections/$slug'
+    | '/product/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AboutRoute: typeof AboutRoute
+  BagRoute: typeof BagRoute
+  ContactRoute: typeof ContactRoute
+  CustomDesignsRoute: typeof CustomDesignsRoute
+  MeasurementsRoute: typeof MeasurementsRoute
+  ShippingRoute: typeof ShippingRoute
+  ShopRoute: typeof ShopRoute
+  CollectionsSlugRoute: typeof CollectionsSlugRoute
+  ProductIdRoute: typeof ProductIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +169,83 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/about': {
+      id: '/about'
+      path: '/about'
+      fullPath: '/about'
+      preLoaderRoute: typeof AboutRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bag': {
+      id: '/bag'
+      path: '/bag'
+      fullPath: '/bag'
+      preLoaderRoute: typeof BagRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/contact': {
+      id: '/contact'
+      path: '/contact'
+      fullPath: '/contact'
+      preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/custom-designs': {
+      id: '/custom-designs'
+      path: '/custom-designs'
+      fullPath: '/custom-designs'
+      preLoaderRoute: typeof CustomDesignsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/measurements': {
+      id: '/measurements'
+      path: '/measurements'
+      fullPath: '/measurements'
+      preLoaderRoute: typeof MeasurementsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shipping': {
+      id: '/shipping'
+      path: '/shipping'
+      fullPath: '/shipping'
+      preLoaderRoute: typeof ShippingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shop': {
+      id: '/shop'
+      path: '/shop'
+      fullPath: '/shop'
+      preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/collections/$slug': {
+      id: '/collections/$slug'
+      path: '/collections/$slug'
+      fullPath: '/collections/$slug'
+      preLoaderRoute: typeof CollectionsSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/product/$id': {
+      id: '/product/$id'
+      path: '/product/$id'
+      fullPath: '/product/$id'
+      preLoaderRoute: typeof ProductIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AboutRoute: AboutRoute,
+  BagRoute: BagRoute,
+  ContactRoute: ContactRoute,
+  CustomDesignsRoute: CustomDesignsRoute,
+  MeasurementsRoute: MeasurementsRoute,
+  ShippingRoute: ShippingRoute,
+  ShopRoute: ShopRoute,
+  CollectionsSlugRoute: CollectionsSlugRoute,
+  ProductIdRoute: ProductIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
