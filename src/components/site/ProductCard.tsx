@@ -20,7 +20,7 @@ export function ProductCard({ p }: { p: Product }) {
         </button>
         <div className="absolute inset-x-3 bottom-3 grid grid-cols-2 gap-2 translate-y-3 opacity-0 transition-all duration-500 group-hover:translate-y-0 group-hover:opacity-100">
           <Link to="/product/$id" params={{ id: p.id }} className="bg-background/95 py-2.5 text-center eyebrow !text-[0.58rem]">Quick view</Link>
-          <button onClick={() => { add(p.id, p.sizes[0]); toast.success(`${p.name} added to your bag`); }} className="bg-primary text-primary-foreground py-2.5 eyebrow !text-[0.58rem]">Add to bag</button>
+          <button onClick={() => { add(p.id, p.sizes[0] ?? "Custom"); toast.success(`${p.name} added to your bag`); }} className="bg-primary text-primary-foreground py-2.5 eyebrow !text-[0.58rem]">Add to bag</button>
         </div>
       </div>
       <div className="pt-4 flex justify-between gap-3">
