@@ -13,6 +13,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CartProvider } from "@/lib/cart";
+import { AuthProvider } from "@/lib/auth";
 import { Header, Footer, WhatsAppFab } from "@/components/site/Chrome";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -91,15 +92,17 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
-      <CartProvider>
-        <Header />
-        <main>
-          <Outlet />
-        </main>
-        <Footer />
-        <WhatsAppFab />
-        <Toaster position="bottom-left" />
-      </CartProvider>
+      <AuthProvider>
+        <CartProvider>
+          <Header />
+          <main>
+            <Outlet />
+          </main>
+          <Footer />
+          <WhatsAppFab />
+          <Toaster position="bottom-left" />
+        </CartProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }

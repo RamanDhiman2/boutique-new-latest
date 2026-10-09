@@ -50,24 +50,23 @@ function ProductPage() {
           <div className="mt-3 text-xl">{gbp(p.price)}</div>
           <p className="mt-6 text-muted-foreground leading-relaxed">{p.description}</p>
           <div className="mt-8 eyebrow !text-[0.62rem]">Colour — <span className="text-muted-foreground normal-case tracking-normal text-sm">{p.colour}</span></div>
-          <div className="mt-6 eyebrow !text-[0.62rem]">Size</div>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {p.sizes.map((s) => (
-              <button key={s} onClick={() => setSize(s)} className={`min-w-12 px-3 py-2 border text-sm ${size === s ? "bg-foreground text-background border-foreground" : ""}`}>{s}</button>
-            ))}
+
+          <div className="mt-6">
+            <Link to="/measurements" className="w-full inline-flex items-center justify-center gap-2 py-3 border border-foreground hover:bg-foreground hover:text-background transition-colors eyebrow !text-[0.68rem]">
+              <Ruler className="size-4" /> Submit your measurements
+            </Link>
           </div>
-          {size === "Custom" && (
-            <Link to="/measurements" className="mt-3 inline-flex items-center gap-2 text-sm text-primary underline"><Ruler className="size-4" /> Submit your measurements</Link>
-          )}
+
           <div className="mt-8 flex gap-3">
             <button onClick={() => { add(p.id, size); toast.success(`${p.name} added to your bag`); }} className="btn-primary flex-1">Add to Bag</button>
             <button onClick={() => toggleWish(p.id)} aria-label="Wishlist" className="border px-4"><Heart className={`size-5 ${wishlist.includes(p.id) ? "fill-primary text-primary" : ""}`} /></button>
           </div>
-          <a href={waLink(`Hi SohniMutiyaar By CC, I'm interested in ${p.name}. Please can you provide more information?`)} target="_blank" rel="noreferrer" className="mt-3 w-full inline-flex items-center justify-center gap-2 py-4 bg-whatsapp text-primary-foreground eyebrow !text-[0.68rem]">
-            <MessageCircle className="size-4" /> Order via WhatsApp
-          </a>
+          <Link to="/contact" className="mt-3 w-full inline-flex items-center justify-center gap-2 py-4 bg-whatsapp text-primary-foreground eyebrow !text-[0.68rem]">
+            <MessageCircle className="size-4" /> Enquiry
+          </Link>
           <div className="mt-10 divide-y border-y text-sm">
             {[
+              ["Sizing & Measurements", "Whether you select a standard size or provide custom measurements, your details are sent directly to our master tailors to ensure a perfect fit. Sizing can also be finalized through your Enquiry."],
               ["Craftsmanship", "Each piece is finished by hand by skilled artisans. Slight variations are part of its handmade beauty."],
               ["Customisation", "Colours, sleeve length, neckline and fit can be adjusted. Message us on WhatsApp to discuss."],
               ["Shipping", "UK based, shipping worldwide. Delivery times are confirmed at order."],

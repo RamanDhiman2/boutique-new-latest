@@ -26,7 +26,6 @@ export function ProductCard({ p }: { p: Product }) {
       <div className="pt-4 flex justify-between gap-3">
         <div>
           <Link to="/product/$id" params={{ id: p.id }} className="font-serif text-xl leading-tight">{p.name}</Link>
-          <div className="text-xs text-muted-foreground mt-1">{p.colour} · {p.sizes.join(" ")}</div>
         </div>
         <div className="text-sm">{gbp(p.price)}</div>
       </div>

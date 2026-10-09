@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Heart, Menu, Search, ShoppingBag, User, X, MessageCircle } from "lucide-react";
 import { categories, waLink } from "@/lib/catalog";
 import { useCart } from "@/lib/cart";
+import { useAuth } from "@/lib/auth";
 
 export function useReveal() {
   useEffect(() => {
@@ -18,6 +19,7 @@ export function useReveal() {
 
 export function Header() {
   const { count, wishlist } = useCart();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -32,7 +34,7 @@ export function Header() {
           </Link>
           <div className="flex items-center gap-4">
             <Link to="/shop" aria-label="Search" className="hidden sm:block"><Search className="size-[18px]" /></Link>
-            <Link to="/contact" aria-label="Account" className="hidden sm:block"><User className="size-[18px]" /></Link>
+            <Link to={user ? "/profile" : "/login"} aria-label="Account" className="hidden sm:block"><User className="size-[18px]" /></Link>
             <Link to="/bag" aria-label="Wishlist" className="relative"><Heart className="size-[18px]" />{wishlist.length > 0 && <Dot n={wishlist.length} />}</Link>
             <Link to="/bag" aria-label="Shopping bag" className="relative"><ShoppingBag className="size-[18px]" />{count > 0 && <Dot n={count} />}</Link>
             <Link to="/custom-designs" className="hidden xl:inline-flex btn-primary !py-3 !px-5">Custom Design</Link>
