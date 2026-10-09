@@ -14,7 +14,8 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { CartProvider } from "@/lib/cart";
 import { AuthProvider } from "@/lib/auth";
-import { Header, Footer, WhatsAppFab } from "@/components/site/Chrome";
+import { Header, Footer } from "@/components/site/Chrome";
+import { WhatsAppFloatingButton } from "@/components/site/WhatsAppButton";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -22,8 +23,12 @@ function NotFoundComponent() {
     <div className="flex min-h-[60vh] items-center justify-center px-4">
       <div className="max-w-md text-center">
         <h1 className="text-7xl">404</h1>
-        <p className="mt-4 text-muted-foreground">The page you're looking for doesn't exist or has been moved.</p>
-        <Link to="/" className="btn-primary mt-8">Go home</Link>
+        <p className="mt-4 text-muted-foreground">
+          The page you're looking for doesn't exist or has been moved.
+        </p>
+        <Link to="/" className="btn-primary mt-8">
+          Go home
+        </Link>
       </div>
     </div>
   );
@@ -39,10 +44,22 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-3xl">This page didn't load</h1>
-        <p className="mt-2 text-sm text-muted-foreground">Something went wrong. Try refreshing or head back home.</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Something went wrong. Try refreshing or head back home.
+        </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button onClick={() => { router.invalidate(); reset(); }} className="btn-primary">Try again</button>
-          <a href="/" className="btn-outline">Go home</a>
+          <button
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
+            className="btn-primary"
+          >
+            Try again
+          </button>
+          <a href="/" className="btn-outline">
+            Go home
+          </a>
         </div>
       </div>
     </div>
@@ -50,12 +67,16 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
+  ssr: false,
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "SohniMutiyaar By CC — Indian Fashion, UK" },
-      { name: "description", content: "Luxury Indian bridal, occasion and daily wear with handwork. UK based, worldwide shipping." },
+      { title: "SohniMutiyaar By CC — Indian Fashion" },
+      {
+        name: "description",
+        content: "Luxury Indian bridal, occasion and daily wear with bespoke handwork.",
+      },
       { name: "author", content: "SohniMutiyaar By CC" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -65,7 +86,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Jost:wght@300;400;500&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,400&family=Jost:wght@300;400;500&display=swap",
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -76,11 +100,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en-GB">
+    <html lang="en-GB" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {children}
         <Scripts />
       </body>
@@ -99,7 +123,7 @@ function RootComponent() {
             <Outlet />
           </main>
           <Footer />
-          <WhatsAppFab />
+          <WhatsAppFloatingButton />
           <Toaster position="bottom-left" />
         </CartProvider>
       </AuthProvider>

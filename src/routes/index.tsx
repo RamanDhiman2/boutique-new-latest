@@ -1,18 +1,33 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Globe, Instagram, MessageCircle, Ruler, Scissors, Sparkles, Star } from "lucide-react";
+import { Globe, Instagram, Loader2, Mail, Ruler, Scissors, Sparkles, Star } from "lucide-react";
 import { useState } from "react";
-import { categories, heroImage, productsIn, products, waLink } from "@/lib/catalog";
+import { categories, heroImage, productsIn, products } from "@/lib/catalog";
 import { ProductCard } from "@/components/site/ProductCard";
 import { useReveal } from "@/components/site/Chrome";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { sendNewsletterSubscription, isEmailJSConfigured } from "@/lib/email";
+import { toast } from "sonner";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "SohniMutiyaar By CC — Tradition, Tailored Your Way" },
-      { name: "description", content: "Indian bridal, occasion & daily wear with thread, mirror, Aari and hand work. Custom designs, made to measure. UK based, worldwide shipping." },
+      {
+        name: "description",
+        content:
+          "Indian bridal, occasion & daily wear with thread, mirror, Aari and hand work. Custom designs, made to measure.",
+      },
       { property: "og:title", content: "SohniMutiyaar By CC — Tradition, Tailored Your Way" },
-      { property: "og:description", content: "Indian craftsmanship, modern elegance, made for you. UK based, shipping worldwide." },
+      {
+        property: "og:description",
+        content: "Indian craftsmanship, modern elegance, made for you.",
+      },
     ],
   }),
   component: Home,
@@ -22,18 +37,33 @@ const journey = [
   ["Choose Your Style", "Browse our collections or share your inspiration."],
   ["Choose Your Details", "Choose fabric, colour, embroidery and finishing details."],
   ["Share Your Measurements", "Use our simple online measurement form."],
-  ["Discuss Your Design", "We talk it through with you on WhatsApp."],
+  ["Discuss Your Design", "We talk it through with you via email or consultation."],
   ["Confirm Your Order", "Approve the final design and pricing."],
   ["We Create Your Outfit", "Crafted with care by our artisans."],
   ["Worldwide Delivery", "Delivered to your door, wherever you are."],
 ];
 
 const reviews = [
-  ["Priya, London", "My bridal suit was beyond anything I imagined. The handwork is breathtaking and the fit was perfect."],
-  ["Harleen, Toronto", "Ordered from Canada via WhatsApp — so personal, so easy, and it arrived beautifully packed."],
-  ["Simran, Birmingham", "The mirror work outfit I wore to my cousin's sangeet got so many compliments. Truly charming chic."],
-  ["Aisha, Dubai", "Absolutely in love with the thread work! The attention to detail is truly incredible."],
-  ["Kiran, Sydney", "The custom design process was so smooth. My outfit feels so unique and beautifully made."],
+  [
+    "Priya, London",
+    "My bridal suit was beyond anything I imagined. The handwork is breathtaking and the fit was perfect.",
+  ],
+  [
+    "Harleen, Toronto",
+    "Ordered from Canada — so personal, so easy, and it arrived beautifully packed.",
+  ],
+  [
+    "Simran, Birmingham",
+    "The mirror work outfit I wore to my cousin's sangeet got so many compliments. Truly charming chic.",
+  ],
+  [
+    "Aisha, Dubai",
+    "Absolutely in love with the thread work! The attention to detail is truly incredible.",
+  ],
+  [
+    "Kiran, Sydney",
+    "The custom design process was so smooth. My outfit feels so unique and beautifully made.",
+  ],
 ];
 
 function Home() {
@@ -42,76 +72,126 @@ function Home() {
     <>
       {/* Hero */}
       <section className="relative h-[88vh] min-h-[560px] overflow-hidden">
-        <img src={heroImage} alt="Burgundy embroidered suit salwar" width={1536} height={1024} className="absolute inset-0 size-full object-cover object-[60%_center] scale-105 animate-[rise_2s_ease_both]" />
+        <img
+          src={heroImage}
+          alt="Burgundy embroidered suit salwar"
+          width={1536}
+          height={1024}
+          className="absolute inset-0 size-full object-cover object-[60%_center] scale-105 animate-[rise_2s_ease_both]"
+        />
         <div className="absolute inset-0 bg-gradient-to-r from-ink/75 via-ink/30 to-transparent" />
         <div className="relative mx-auto max-w-[1500px] h-full px-5 lg:px-10 flex items-center">
           <div className="max-w-xl text-ink-foreground animate-rise">
             <div className="eyebrow text-gold">Charming Chic · UK</div>
-            <h1 className="mt-5 text-6xl md:text-8xl leading-[0.95]">Tradition, <em className="text-gold">Tailored</em> Your Way.</h1>
+            <h1 className="mt-5 text-6xl md:text-8xl leading-[0.95]">
+              Tradition, <em className="text-gold">Tailored</em> Your Way.
+            </h1>
             <p className="mt-7 text-base md:text-lg opacity-85 leading-relaxed">
-              Indian fashion beautifully crafted with intricate handwork, embroidery and personalised details — for everyday elegance, special occasions and unforgettable bridal moments.
+              Indian fashion beautifully crafted with intricate handwork, embroidery and
+              personalised details — for everyday elegance, special occasions and unforgettable
+              bridal moments.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <Link to="/shop" className="btn-primary">Shop Collection</Link>
-              <Link to="/custom-designs" className="btn-outline">Create Your Custom Outfit</Link>
+              <Link to="/shop" className="btn-primary">
+                Shop Collection
+              </Link>
+              <Link to="/custom-designs" className="btn-outline">
+                Create Your Custom Outfit
+              </Link>
             </div>
-            <div className="mt-6 eyebrow !text-[0.6rem] opacity-70">UK Based • Worldwide Shipping</div>
           </div>
         </div>
       </section>
 
-
       {/* Categories */}
-      <Section eyebrow="Explore SohniMutiyaar" title="Discover craftsmanship, colour and contemporary Indian elegance.">
+      <Section
+        eyebrow="Explore SohniMutiyaar"
+        title="Discover craftsmanship, colour and contemporary Indian elegance."
+      >
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
-          {categories.filter(c => !["daily-wear", "mirror-work"].includes(c.slug)).map((c, i) => (
-            <Link key={c.slug} to="/collections/$slug" params={{ slug: c.slug }}
-              className={`group relative overflow-hidden reveal ${i === 0 ? "col-span-2 md:row-span-2 aspect-[4/5] md:aspect-auto" : "aspect-[3/4]"}`}>
-              <img src={c.image} alt={c.name} loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-[1.5s] group-hover:scale-110" />
-              <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-transparent to-transparent" />
-              <div className="absolute bottom-0 p-5 text-ink-foreground">
-                <h3 className={i === 0 ? "text-5xl" : "text-2xl md:text-3xl"}>{c.name}</h3>
-                <div className="eyebrow !text-[0.58rem] mt-2 opacity-80 group-hover:text-gold transition-colors">Shop now →</div>
-              </div>
-            </Link>
-          ))}
+          {categories
+            .filter((c) => !["daily-wear", "mirror-work"].includes(c.slug))
+            .map((c, i) => (
+              <Link
+                key={c.slug}
+                to="/collections/$slug"
+                params={{ slug: c.slug }}
+                className={`group relative overflow-hidden reveal ${i === 0 ? "col-span-2 md:row-span-2 aspect-[4/5] md:aspect-auto" : "aspect-[3/4]"}`}
+              >
+                <img
+                  src={c.image}
+                  alt={c.name}
+                  loading="lazy"
+                  className="absolute inset-0 size-full object-cover transition-transform duration-[1.5s] group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-transparent to-transparent" />
+                <div className="absolute bottom-0 p-5 text-ink-foreground">
+                  <h3 className={i === 0 ? "text-5xl" : "text-2xl md:text-3xl"}>{c.name}</h3>
+                  <div className="eyebrow !text-[0.58rem] mt-2 opacity-80 group-hover:text-gold transition-colors">
+                    Shop now →
+                  </div>
+                </div>
+              </Link>
+            ))}
         </div>
       </Section>
 
       {/* New */}
       <Section eyebrow="New & Noteworthy" title="Discover our latest designs.">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-12">
-          {products.map((p) => <ProductCard key={p.id} p={p} />)}
+          {products.map((p) => (
+            <ProductCard key={p.id} p={p} />
+          ))}
         </div>
       </Section>
 
       {/* Bridal feature */}
       <section className="bg-primary text-primary-foreground my-24">
         <div className="mx-auto max-w-[1500px] grid md:grid-cols-2">
-          <img src={categories[0]!.image} alt="Bridal" loading="lazy" className="w-full h-full max-h-[760px] object-cover reveal" />
+          <img
+            src={categories[0]!.image}
+            alt="Bridal"
+            loading="lazy"
+            className="w-full h-full max-h-[760px] object-cover reveal"
+          />
           <div className="p-10 md:p-20 flex flex-col justify-center reveal">
             <div className="eyebrow text-gold">The Bridal Edit</div>
             <h2 className="mt-5 text-5xl md:text-6xl">For the moment you'll remember forever.</h2>
-            <p className="mt-6 opacity-80 leading-relaxed">Heirloom embroidery, rich fabrics and a fit made only for you. Every bridal outfit is personally designed with you from first sketch to final stitch.</p>
+            <p className="mt-6 opacity-80 leading-relaxed">
+              Heirloom embroidery, rich fabrics and a fit made only for you. Every bridal outfit is
+              personally designed with you from first sketch to final stitch.
+            </p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <Link to="/collections/$slug" params={{ slug: "bridal" }} className="btn-outline">Explore Bridal</Link>
-              <Link to="/contact" className="btn-outline">Bridal Consultation</Link>
+              <Link to="/collections/$slug" params={{ slug: "bridal" }} className="btn-outline">
+                Explore Bridal
+              </Link>
+              <Link to="/contact" className="btn-outline">
+                Bridal Consultation
+              </Link>
             </div>
           </div>
         </div>
       </section>
-
 
       {/* Made for you */}
       <section className="bg-secondary py-24 mt-24">
         <div className="mx-auto max-w-4xl px-5 lg:px-10 text-center flex flex-col items-center">
           <div className="reveal flex flex-col items-center">
             <div className="eyebrow text-primary">Made For You</div>
-            <h2 className="mt-5 text-5xl md:text-6xl">Your design. Your measurements. <em className="text-primary">Your story.</em></h2>
-            <p className="mt-6 text-muted-foreground leading-relaxed max-w-2xl mx-auto">Choose your preferred design, fabric, colour, embroidery and finishing details. We create personalised Indian outfits around your style and measurements.</p>
+            <h2 className="mt-5 text-5xl md:text-6xl">
+              Your design. Your measurements. <em className="text-primary">Your story.</em>
+            </h2>
+            <p className="mt-6 text-muted-foreground leading-relaxed max-w-2xl mx-auto">
+              Choose your preferred design, fabric, colour, embroidery and finishing details. We
+              create personalised Indian outfits around your style and measurements.
+            </p>
             <div className="mt-9 flex flex-wrap justify-center gap-3">
-              <Link to="/custom-designs" className="btn-primary">Start Your Custom Design</Link>
-              <Link to="/measurements" className="btn-outline"><Ruler className="size-4" /> Measurement Form</Link>
+              <Link to="/custom-designs" className="btn-primary">
+                Start Your Custom Design
+              </Link>
+              <Link to="/measurements" className="btn-outline">
+                <Ruler className="size-4" /> Measurement Form
+              </Link>
             </div>
           </div>
         </div>
@@ -120,10 +200,10 @@ function Home() {
       {/* Shipping & features */}
       <section className="mx-auto max-w-[1500px] px-5 lg:px-10 py-24 grid md:grid-cols-4 gap-10 text-center">
         {[
-          [Globe, "Worldwide Shipping", "From the UK to your door, wherever you are."],
+          [Globe, "Worldwide Shipping", "Delivered directly to your door, wherever you are."],
           [Scissors, "Made to Measure", "Outfits tailored to your exact measurements."],
           [Sparkles, "Artisan Handwork", "Thread, mirror, Aari and hand embroidery."],
-          [MessageCircle, "WhatsApp Ordering", "Personal, easy ordering with our team."],
+          [Mail, "Online Support", "Personal, dedicated consultations via email and message."],
         ].map(([Icon, t, d]) => {
           const I = Icon as typeof Globe;
           return (
@@ -143,7 +223,11 @@ function Home() {
             {reviews.map(([n, q]) => (
               <CarouselItem key={n} className="pl-4 md:basis-1/2 lg:basis-1/3">
                 <figure className="reveal bg-card border p-10 h-full">
-                  <div className="flex gap-1 text-gold">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="size-3.5 fill-current" />)}</div>
+                  <div className="flex gap-1 text-gold">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <Star key={i} className="size-3.5 fill-current" />
+                    ))}
+                  </div>
                   <blockquote className="mt-6 font-serif text-2xl leading-snug">“{q}”</blockquote>
                   <figcaption className="mt-6 eyebrow text-muted-foreground">{n}</figcaption>
                 </figure>
@@ -161,8 +245,19 @@ function Home() {
       <Section eyebrow="@sohnimutiyaarbycc" title="Follow along on Instagram & TikTok">
         <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
           {categories.slice(1).map((c) => (
-            <a key={c.slug} href="https://instagram.com" target="_blank" rel="noreferrer" className="group relative aspect-square overflow-hidden reveal">
-              <img src={c.image} alt="" loading="lazy" className="size-full object-cover transition-transform duration-1000 group-hover:scale-110" />
+            <a
+              key={c.slug}
+              href="https://instagram.com"
+              target="_blank"
+              rel="noreferrer"
+              className="group relative aspect-square overflow-hidden reveal"
+            >
+              <img
+                src={c.image}
+                alt=""
+                loading="lazy"
+                className="size-full object-cover transition-transform duration-1000 group-hover:scale-110"
+              />
               <div className="absolute inset-0 grid place-items-center bg-ink/0 group-hover:bg-ink/40 transition-colors">
                 <Instagram className="size-6 text-ink-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
@@ -176,7 +271,19 @@ function Home() {
   );
 }
 
-function Section({ eyebrow, title, text, action, children }: { eyebrow: string; title: string; text?: string; action?: React.ReactNode; children: React.ReactNode }) {
+function Section({
+  eyebrow,
+  title,
+  text,
+  action,
+  children,
+}: {
+  eyebrow: string;
+  title: string;
+  text?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <section className="mx-auto max-w-[1500px] px-5 lg:px-10 pt-24">
       <div className="flex flex-wrap items-end justify-between gap-6 mb-10 reveal">
@@ -193,18 +300,74 @@ function Section({ eyebrow, title, text, action, children }: { eyebrow: string; 
 }
 
 function Newsletter() {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const trimmed = email.trim();
+    if (!trimmed || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (isEmailJSConfigured()) {
+        await sendNewsletterSubscription(trimmed);
+      }
+      setDone(true);
+      setEmail("");
+      toast.success("Thank you! You have joined The SohniMutiyaar Circle.");
+    } catch (err: unknown) {
+      const msg =
+        err instanceof Error ? err.message : "Could not send subscription. Please try again later.";
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <section className="mx-auto max-w-2xl px-5 pt-28 text-center reveal">
       <div className="eyebrow text-primary">The SohniMutiyaar Circle</div>
       <h2 className="mt-4 text-4xl md:text-5xl">New collections, first.</h2>
-      <p className="mt-4 text-muted-foreground">Be the first to know about new arrivals, bridal edits and exclusive offers.</p>
+      <p className="mt-4 text-muted-foreground">
+        Be the first to know about new arrivals, bridal edits and exclusive offers.
+      </p>
       {done ? (
-        <p className="mt-8 font-serif text-2xl text-primary">Thank you — welcome to the circle.</p>
+        <div className="mt-8 space-y-3 animate-rise">
+          <p className="font-serif text-2xl text-primary">Thank you — welcome to the circle.</p>
+          <p className="text-xs text-muted-foreground">
+            We will send our curated bridal edits and announcements directly to your inbox.
+          </p>
+        </div>
       ) : (
-        <form onSubmit={(e) => { e.preventDefault(); setDone(true); }} className="mt-8 flex gap-3">
-          <input required type="email" placeholder="Your email address" className="field flex-1" />
-          <button className="btn-primary">Subscribe</button>
+        <form onSubmit={handleSubscribe} className="mt-8 flex flex-col sm:flex-row gap-3">
+          <input
+            required
+            type="email"
+            placeholder="Your email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            disabled={loading}
+            className="field flex-1"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn-primary inline-flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="size-4 animate-spin" />
+                <span>Subscribing...</span>
+              </>
+            ) : (
+              <span>Subscribe</span>
+            )}
+          </button>
         </form>
       )}
     </section>

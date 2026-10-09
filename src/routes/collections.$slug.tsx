@@ -3,6 +3,7 @@ import { useState } from "react";
 import { categories, productsIn } from "@/lib/catalog";
 import { ProductCard } from "@/components/site/ProductCard";
 import { useReveal } from "@/components/site/Chrome";
+import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
 
 export const Route = createFileRoute("/collections/$slug")({
   loader: ({ params }) => {
@@ -35,7 +36,11 @@ function CollectionPage() {
   return (
     <>
       <section className="relative h-[52vh] min-h-[380px] overflow-hidden">
-        <img src={category.image} alt={category.name} className="absolute inset-0 size-full object-cover" />
+        <img
+          src={category.image}
+          alt={category.name}
+          className="absolute inset-0 size-full object-cover"
+        />
         <div className="absolute inset-0 bg-ink/45" />
         <div className="relative h-full flex flex-col items-center justify-center text-center text-ink-foreground px-5 animate-rise">
           <div className="eyebrow text-gold">{category.tagline}</div>
@@ -43,16 +48,36 @@ function CollectionPage() {
           <p className="mt-5 max-w-xl opacity-85">{category.description}</p>
         </div>
       </section>
-      <div className="mx-auto max-w-[1500px] px-5 lg:px-10 py-8 flex flex-wrap justify-between gap-4 border-b">
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={custom} onChange={(e) => setCustom(e.target.checked)} className="accent-primary" /> Customisable only</label>
-        <select value={sort} onChange={(e) => setSort(e.target.value)} className="bg-transparent text-sm eyebrow">
+      <div className="mx-auto max-w-[1500px] px-5 lg:px-10 pt-4">
+        <SiteBreadcrumb items={[{ label: "Collections", to: "/shop" }, { label: category.name }]} />
+      </div>
+      <div className="mx-auto max-w-[1500px] px-5 lg:px-10 py-6 flex flex-wrap justify-between gap-4 border-b">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={custom}
+            onChange={(e) => setCustom(e.target.checked)}
+            className="accent-primary"
+          />{" "}
+          Customisable only
+        </label>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value)}
+          className="bg-transparent text-sm eyebrow"
+        >
           <option value="featured">Featured</option>
           <option value="low">Price: Low to High</option>
           <option value="high">Price: High to Low</option>
         </select>
       </div>
-      <div key={sort + custom} className="mx-auto max-w-[1500px] px-5 lg:px-10 pt-12 grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-12">
-        {list.map((p) => <ProductCard key={p.id} p={p} />)}
+      <div
+        key={sort + custom}
+        className="mx-auto max-w-[1500px] px-5 lg:px-10 pt-12 grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-12"
+      >
+        {list.map((p) => (
+          <ProductCard key={p.id} p={p} />
+        ))}
       </div>
     </>
   );

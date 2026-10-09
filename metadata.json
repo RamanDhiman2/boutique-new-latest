@@ -1,0 +1,6 @@
+{
+  "name": "SohniMutiyaar By CC",
+  "description": "Luxury Indian bridal, occasion and daily wear with bespoke handwork.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
