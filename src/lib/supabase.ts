@@ -133,6 +133,10 @@ function createMockSupabase() {
         if (!email) {
           return { data: { user: null, session: null }, error: { message: "Email is required" } };
         }
+        const registeredUsers = getStorage<string[]>("registered_users", ["simran@sohnimutiyaar.co.uk", "customer@gmail.com"]);
+        if (!registeredUsers.includes(email)) {
+          return { data: { user: null, session: null }, error: { message: "Invalid login credentials" } };
+        }
         const user: User = {
           ...defaultUser,
           id: "user-" + btoa(email).slice(0, 8),
@@ -155,6 +159,13 @@ function createMockSupabase() {
         if (!email) {
           return { data: { user: null, session: null }, error: { message: "Email is required" } };
         }
+        const registeredUsers = getStorage<string[]>("registered_users", ["simran@sohnimutiyaar.co.uk", "customer@gmail.com"]);
+        if (registeredUsers.includes(email)) {
+          return { data: { user: null, session: null }, error: { message: "User already registered" } };
+        }
+        registeredUsers.push(email);
+        setStorage("registered_users", registeredUsers);
+        
         const user: User = {
           ...defaultUser,
           id: "user-" + btoa(email).slice(0, 8),

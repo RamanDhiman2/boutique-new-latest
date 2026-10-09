@@ -8,6 +8,9 @@ import { useQuery } from "@tanstack/react-query";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
+import { Download } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -94,6 +97,28 @@ function ProfilePage() {
       toast.success("Order cancelled securely");
       refetchOrders();
     }
+  };
+
+  const handleExportPdf = (order: OrderRecord) => {
+    const doc = new jsPDF();
+    doc.text(`Order Invoice #${order.id.slice(0, 8)}`, 14, 20);
+    doc.text(`Date: ${new Date(order.created_at).toLocaleDateString()}`, 14, 30);
+    doc.text(`Status: ${order.status.toUpperCase()}`, 14, 40);
+    
+    autoTable(doc, {
+      startY: 50,
+      head: [["Item", "Size", "Quantity", "Price", "Total"]],
+      body: order.order_items.map((it) => [
+        it.product_id,
+        it.size,
+        it.quantity,
+        `£${it.price}`,
+        `£${it.price * it.quantity}`,
+      ]),
+      foot: [["", "", "", "Total", `£${order.total_amount}`]],
+    });
+
+    doc.save(`Order_${order.id.slice(0, 8)}.pdf`);
   };
 
   const handleDeleteAddress = async (addressId: string) => {
@@ -337,16 +362,22 @@ function ProfilePage() {
                           </div>
                         ))}
                       </div>
-                      {order.status === "processing" && (
-                        <div className="border-t pt-4 text-right">
+                      <div className="border-t pt-4 flex justify-end items-center gap-6 text-sm">
+                        <button
+                          onClick={() => handleExportPdf(order)}
+                          className="flex items-center gap-1.5 text-primary hover:underline font-medium"
+                        >
+                          <Download className="size-4" /> Export PDF
+                        </button>
+                        {order.status === "processing" && (
                           <button
                             onClick={() => handleCancelOrder(order.id)}
-                            className="text-sm text-destructive hover:underline"
+                            className="text-destructive hover:underline font-medium"
                           >
                             Cancel Order
                           </button>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { useState } from "react";
-import { Heart, Mail, Ruler } from "lucide-react";
+import { Heart, Mail, Ruler, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { categories, gbp, products, productsIn, waLink } from "@/lib/catalog";
 import { useCart } from "@/lib/cart";
@@ -8,6 +8,8 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { useReveal } from "@/components/site/Chrome";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
 import { WhatsAppIcon } from "@/components/site/WhatsAppButton";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { sendContactEmail } from "@/lib/email";
 
 export const Route = createFileRoute("/product/$id")({
   loader: ({ params }) => {
@@ -31,10 +33,39 @@ export const Route = createFileRoute("/product/$id")({
 
 function ProductPage() {
   const { product: p } = Route.useLoaderData();
-  const [size, setSize] = useState(p.sizes[0] ?? "Custom");
+  const [activeImage, setActiveImage] = useState(0);
   const { add, toggleWish, wishlist } = useCart();
   const cat = categories.find((c) => c.slug === p.category)!;
   useReveal();
+
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleEmailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await sendContactEmail({
+        name: name.trim(),
+        email: email.trim(),
+        subject: `Enquiry for ${p.name} (Colour: ${p.colour})`,
+        message: message.trim(),
+      });
+      toast.success("Enquiry sent! We will get back to you shortly.");
+      setModalOpen(false);
+      setName("");
+      setEmail("");
+      setMessage("");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send enquiry.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-[1500px] px-5 lg:px-10 pt-6">
       <SiteBreadcrumb
@@ -46,15 +77,32 @@ function ProductPage() {
         ]}
       />
       <div className="grid lg:grid-cols-[1.3fr_1fr] gap-12">
-        <div className="flex lg:grid lg:grid-cols-2 gap-3 overflow-x-auto snap-x">
-          {p.images.map((src, i) => (
+        <div className="flex flex-col-reverse lg:flex-row gap-4">
+          <div className="flex lg:flex-col gap-3 overflow-x-auto w-full lg:w-24 shrink-0 no-scrollbar">
+            {p.images.map((src, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setActiveImage(i)}
+                className={`shrink-0 transition-all ${
+                  activeImage === i ? "ring-1 ring-primary ring-offset-2" : "opacity-70 hover:opacity-100"
+                }`}
+              >
+                <img
+                  src={src}
+                  alt={`${p.name} view ${i + 1}`}
+                  className="w-20 lg:w-full aspect-[3/4] object-cover"
+                />
+              </button>
+            ))}
+          </div>
+          <div className="flex-1">
             <img
-              key={i}
-              src={src}
+              src={p.images[activeImage]}
               alt={p.name}
-              className="snap-center shrink-0 w-[85%] lg:w-full aspect-[3/4] object-cover"
+              className="w-full aspect-[3/4] object-cover"
             />
-          ))}
+          </div>
         </div>
         <div className="lg:sticky lg:top-40 self-start animate-rise">
           {p.customisable && <div className="eyebrow text-primary">Customisation available</div>}
@@ -77,35 +125,10 @@ function ProductPage() {
             </Link>
           </div>
 
-          <div className="mt-6">
-            <div className="flex justify-between items-center mb-2">
-              <span className="eyebrow !text-[0.62rem]">Select Size</span>
-              {size === "Custom" && (
-                <span className="text-xs text-primary font-medium">Made to your measurements</span>
-              )}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {p.sizes.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => setSize(s)}
-                  className={`px-3.5 py-1.5 text-xs uppercase tracking-wider border rounded-sm transition-colors ${
-                    size === s
-                      ? "border-primary bg-primary text-primary-foreground font-medium"
-                      : "border-border hover:border-foreground"
-                  }`}
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div className="mt-8 flex gap-3">
             <button
               onClick={() => {
-                add(p.id, size);
+                add(p.id, "Custom");
                 toast.success(`${p.name} added to your bag`);
               }}
               className="btn-primary flex-1"
@@ -120,19 +143,71 @@ function ProductPage() {
           </div>
           <div className="mt-3 flex flex-col sm:flex-row gap-2">
             <a
-              href={waLink(`Hi SohniMutiyaar By CC, I'd like to enquire about ${p.name} (${gbp(p.price)}).`)}
+              href={waLink(`Hi SohniMutiyaar By CC, I'd like to enquire about ${p.name} (${gbp(p.price)}). Colour: ${p.colour}.`)}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 inline-flex items-center justify-center gap-2 py-3.5 px-4 bg-[#25D366] hover:bg-[#20ba59] text-white eyebrow !text-[0.68rem] transition-colors rounded-sm shadow-sm"
             >
               <WhatsAppIcon className="size-4 text-white" /> Enquire on WhatsApp
             </a>
-            <Link
-              to="/contact"
-              className="flex-1 inline-flex items-center justify-center gap-2 py-3.5 px-4 bg-secondary hover:bg-secondary/80 text-foreground border eyebrow !text-[0.68rem] transition-colors rounded-sm"
-            >
-              <Mail className="size-4" /> Email Us
-            </Link>
+            <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+              <DialogTrigger asChild>
+                <button className="flex-1 inline-flex items-center justify-center gap-2 py-3.5 px-4 bg-secondary hover:bg-secondary/80 text-foreground border eyebrow !text-[0.68rem] transition-colors rounded-sm cursor-pointer">
+                  <Mail className="size-4" /> Email Us
+                </button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Enquire About {p.name}</DialogTitle>
+                  <DialogDescription>
+                    Fill in your details and we will get back to you shortly regarding this product.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleEmailSubmit} className="space-y-4 mt-4">
+                  <div>
+                    <label className="text-xs uppercase tracking-wider mb-1 font-medium block">Name *</label>
+                    <input
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      disabled={loading}
+                      className="field w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs uppercase tracking-wider mb-1 font-medium block">Email *</label>
+                    <input
+                      required
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={loading}
+                      className="field w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs uppercase tracking-wider mb-1 font-medium block">Message *</label>
+                    <textarea
+                      required
+                      rows={4}
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      disabled={loading}
+                      placeholder={`I'm interested in the ${p.name}...`}
+                      className="field w-full resize-y"
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="btn-primary w-full flex justify-center items-center gap-2"
+                  >
+                    {loading && <Loader2 className="size-4 animate-spin" />}
+                    Send Enquiry
+                  </button>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
           <div className="mt-10 divide-y border-y text-sm">
             {[
@@ -141,7 +216,7 @@ function ProductPage() {
                 "Whether you select a standard size or provide custom measurements, your details are sent directly to our master tailors to ensure a perfect fit. Sizing can also be finalized through your Enquiry.",
               ],
               [
-                "Craftsmanship",
+                "Materials",
                 "Each piece is finished by hand by skilled artisans. Slight variations are part of its handmade beauty.",
               ],
               [

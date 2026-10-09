@@ -1,6 +1,12 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Heart, Menu, Search, ShoppingBag, User, X } from "lucide-react";
+import { Heart, Menu, Search, ShoppingBag, User, X, ChevronDown } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { categories } from "@/lib/catalog";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
@@ -30,7 +36,7 @@ export function Header() {
         Custom Designs Available • Made to Measure Elegance
       </div>
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur border-b">
-        <div className="mx-auto max-w-[1500px] px-5 lg:px-10 h-20 flex items-center justify-between gap-4">
+        <div className="mx-auto max-w-[1500px] px-5 lg:px-10 h-24 flex items-center justify-between gap-4">
           <button className="lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu">
             <Menu className="size-5" />
           </button>
@@ -38,9 +44,39 @@ export function Header() {
             <img
               src="/Maroon and Gold Monogram Fashion Logo.png"
               alt="SohniMutiyaar By CC"
-              className="h-16 w-auto object-contain"
+              className="h-20 w-auto object-contain"
             />
           </Link>
+
+          <nav className="hidden lg:flex items-center justify-center gap-7 eyebrow !text-[0.66rem] flex-1">
+            <Link to="/" activeOptions={{ exact: true }} activeProps={{ className: "text-primary" }}>
+              Home
+            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary transition-colors focus:outline-none">
+                CATEGORIES <ChevronDown className="size-3" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-48 bg-background">
+                {categories.map((c) => (
+                  <DropdownMenuItem key={c.slug} asChild>
+                    <Link to="/collections/$slug" params={{ slug: c.slug }} className="w-full cursor-pointer uppercase text-xs tracking-wider">
+                      {c.name}
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Link to="/shop" activeProps={{ className: "text-primary" }}>
+              Shop All
+            </Link>
+            <Link to="/about" activeProps={{ className: "text-primary" }}>
+              About
+            </Link>
+            <Link to="/contact" activeProps={{ className: "text-primary" }}>
+              Contact
+            </Link>
+          </nav>
+
           <div className="flex items-center gap-4">
             <Link to="/shop" aria-label="Search" className="hidden sm:block">
               <Search className="size-[18px]" />
@@ -60,41 +96,8 @@ export function Header() {
               <ShoppingBag className="size-[18px]" />
               {count > 0 && <Dot n={count} />}
             </Link>
-            <Link to="/custom-designs" className="hidden xl:inline-flex btn-primary !py-3 !px-5">
-              Custom Design
-            </Link>
           </div>
         </div>
-        <nav className="hidden lg:flex justify-center gap-7 pb-4 eyebrow !text-[0.66rem]">
-          <Link to="/" activeOptions={{ exact: true }} activeProps={{ className: "text-primary" }}>
-            Home
-          </Link>
-          {categories
-            .filter((c) => ["bridal", "shop-by-occasion"].includes(c.slug))
-            .map((c) => (
-              <Link
-                key={c.slug}
-                to="/collections/$slug"
-                params={{ slug: c.slug }}
-                activeProps={{ className: "text-primary" }}
-                className="hover:text-primary transition-colors"
-              >
-                {c.name}
-              </Link>
-            ))}
-          <Link to="/shop" activeProps={{ className: "text-primary" }}>
-            Shop All
-          </Link>
-          <Link to="/custom-designs" activeProps={{ className: "text-primary" }}>
-            Custom Designs
-          </Link>
-          <Link to="/about" activeProps={{ className: "text-primary" }}>
-            About
-          </Link>
-          <Link to="/contact" activeProps={{ className: "text-primary" }}>
-            Contact
-          </Link>
-        </nav>
       </header>
       {open && (
         <div className="fixed inset-0 z-50 bg-background animate-rise overflow-y-auto">
@@ -108,17 +111,15 @@ export function Header() {
             onClick={() => setOpen(false)}
           >
             <Link to="/">Home</Link>
-            {categories
-              .filter((c) => ["bridal", "shop-by-occasion"].includes(c.slug))
-              .map((c) => (
+            <div className="text-primary text-xl italic mt-2">Categories</div>
+            <div className="flex flex-col gap-4 pl-4 text-2xl">
+              {categories.map((c) => (
                 <Link key={c.slug} to="/collections/$slug" params={{ slug: c.slug }}>
                   {c.name}
                 </Link>
               ))}
+            </div>
             <Link to="/shop">Shop All</Link>
-            <Link to="/custom-designs" className="italic text-primary">
-              Custom Designs
-            </Link>
             <Link to="/measurements">Measurements</Link>
             <Link to="/about">About</Link>
             <Link to="/contact">Contact</Link>
@@ -168,10 +169,10 @@ export function Footer() {
         </Col>
         <Col title="About">
           <Link to="/about">Our Story</Link>
-          <a href="https://instagram.com" target="_blank" rel="noreferrer">
+          <a href="https://www.instagram.com/sohnimutiyaarofficial_?xtok=MWRxbTBram5uZG9udg==" target="_blank" rel="noreferrer">
             Instagram
           </a>
-          <a href="https://tiktok.com" target="_blank" rel="noreferrer">
+          <a href="https://www.tiktok.com/@sohnimutiyaarofficial_?_r=1&_t=ZN-9ANTri79OHm" target="_blank" rel="noreferrer">
             TikTok
           </a>
         </Col>

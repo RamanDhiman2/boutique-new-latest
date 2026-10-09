@@ -10,6 +10,68 @@ import { PageHeader } from "@/components/site/Chrome";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
+import { stripePromise, createPaymentIntentDevOnly } from "@/lib/stripe";
+
+function CheckoutForm({
+  selectedAddress,
+  checkoutLines,
+  onSuccess,
+}: {
+  selectedAddress: string | null;
+  checkoutLines: any[];
+  onSuccess: () => Promise<void>;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handlePayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements || !selectedAddress) {
+      if (!selectedAddress) toast.error("Please select a delivery address first.");
+      return;
+    }
+
+    if (checkoutLines.length === 0) {
+      toast.error("Your bag is empty.");
+      return;
+    }
+
+    setIsProcessing(true);
+
+    const { error, paymentIntent } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: window.location.origin + "/order-success",
+      },
+      redirect: "if_required", // Prevent automatic redirect so we can create the order in DB
+    });
+
+    if (error) {
+      toast.error(error.message || "Payment failed");
+      setIsProcessing(false);
+    } else if (paymentIntent && paymentIntent.status === "succeeded") {
+      // Payment successful, now create the order in Supabase
+      await onSuccess();
+      setIsProcessing(false);
+    } else {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handlePayment} className="mt-8">
+      <PaymentElement />
+      <button
+        disabled={isProcessing || !stripe || !elements || !selectedAddress || checkoutLines.length === 0}
+        className="w-full mt-8 py-4 bg-foreground text-background font-semibold hover:bg-foreground/90 transition-colors uppercase tracking-wider text-sm disabled:opacity-50"
+      >
+        {isProcessing ? "Processing Payment..." : "Pay Now"}
+      </button>
+    </form>
+  );
+}
 
 export const Route = createFileRoute("/checkout")({
   component: CheckoutPage,
@@ -21,6 +83,15 @@ function CheckoutPage() {
   const navigate = useNavigate();
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [clientSecret, setClientSecret] = useState("");
+
+  useEffect(() => {
+    if (checkoutTotal > 0) {
+      createPaymentIntentDevOnly(checkoutTotal).then((data) => {
+        setClientSecret(data.client_secret);
+      });
+    }
+  }, [checkoutTotal]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -63,6 +134,7 @@ function CheckoutPage() {
         product_id: l.product.id,
         size: l.size,
         quantity: l.qty,
+        price: l.product.price,
       }));
 
       const { data: orderId, error: orderError } = await supabase.rpc("create_order_secure", {
@@ -199,11 +271,32 @@ function CheckoutPage() {
           )}
 
           <h2 className="text-2xl mb-6">2. Payment Method</h2>
-          <div className="border p-6 rounded-lg bg-muted/50 mb-8">
-            <p className="text-sm text-muted-foreground">
-              Payment gateway integration (e.g. Stripe/Razorpay) will appear here. For this demo,
-              clicking "Place Order" will simulate a successful payment.
-            </p>
+          <div className="border p-6 rounded-lg bg-muted/10 mb-8">
+            {clientSecret ? (
+              <Elements
+                stripe={stripePromise}
+                options={{
+                  clientSecret,
+                  appearance: {
+                    theme: "stripe",
+                    variables: {
+                      colorPrimary: "#000000",
+                      colorBackground: "#ffffff",
+                    },
+                  },
+                }}
+              >
+                <CheckoutForm
+                  selectedAddress={selectedAddress}
+                  checkoutLines={checkoutLines}
+                  onSuccess={handlePlaceOrder}
+                />
+              </Elements>
+            ) : (
+              <div className="text-center py-10 text-muted-foreground animate-pulse">
+                Loading secure checkout...
+              </div>
+            )}
           </div>
         </div>
 
@@ -247,13 +340,6 @@ function CheckoutPage() {
               </div>
             </div>
 
-            <button
-              onClick={handlePlaceOrder}
-              disabled={isSubmitting || checkoutLines.length === 0}
-              className="w-full mt-8 py-4 bg-foreground text-background font-semibold hover:bg-foreground/90 transition-colors uppercase tracking-wider text-sm disabled:opacity-50"
-            >
-              {isSubmitting ? "Processing..." : "Place Order"}
-            </button>
           </div>
         </div>
       </div>

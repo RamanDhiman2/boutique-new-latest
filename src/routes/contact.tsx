@@ -156,14 +156,18 @@ function Contact() {
             <div className="eyebrow text-primary mb-4">Follow Us</div>
             <div className="flex gap-4">
               <a
-                href="#"
+                href="https://www.instagram.com/sohnimutiyaarofficial_?xtok=MWRxbTBram5uZG9udg=="
+                target="_blank"
+                rel="noreferrer"
                 className="p-3 bg-secondary hover:bg-secondary/80 transition-colors rounded-full"
                 aria-label="Instagram"
               >
                 <Instagram className="size-5" />
               </a>
               <a
-                href="#"
+                href="https://www.tiktok.com/@sohnimutiyaarofficial_?_r=1&_t=ZN-9ANTri79OHm"
+                target="_blank"
+                rel="noreferrer"
                 className="p-3 bg-secondary hover:bg-secondary/80 transition-colors rounded-full"
                 aria-label="TikTok"
               >

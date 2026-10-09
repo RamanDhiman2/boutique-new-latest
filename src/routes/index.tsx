@@ -247,7 +247,7 @@ function Home() {
           {categories.slice(1).map((c) => (
             <a
               key={c.slug}
-              href="https://instagram.com"
+              href="https://www.instagram.com/sohnimutiyaarofficial_?xtok=MWRxbTBram5uZG9udg=="
               target="_blank"
               rel="noreferrer"
               className="group relative aspect-square overflow-hidden reveal"

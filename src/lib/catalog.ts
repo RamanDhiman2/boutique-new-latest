@@ -10,7 +10,7 @@ import hand from "@/assets/hand.jpg";
 export const heroImage = hero;
 
 export const CONTACT_EMAIL = "Charminngchic@gmail.com";
-export const WHATSAPP_NUMBER = "447739307042";
+export const WHATSAPP_NUMBER = "447393070421";
 
 export const waLink = (msg = "Hi SohniMutiyaar By CC, I'd like to enquire about an outfit.") =>
   `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
