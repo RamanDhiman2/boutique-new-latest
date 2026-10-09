@@ -4,6 +4,7 @@ import { useState } from "react";
 import { categories, heroImage, productsIn, products, waLink } from "@/lib/catalog";
 import { ProductCard } from "@/components/site/ProductCard";
 import { useReveal } from "@/components/site/Chrome";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -31,11 +32,12 @@ const reviews = [
   ["Priya, London", "My bridal suit was beyond anything I imagined. The handwork is breathtaking and the fit was perfect."],
   ["Harleen, Toronto", "Ordered from Canada via WhatsApp — so personal, so easy, and it arrived beautifully packed."],
   ["Simran, Birmingham", "The mirror work outfit I wore to my cousin's sangeet got so many compliments. Truly charming chic."],
+  ["Aisha, Dubai", "Absolutely in love with the thread work! The attention to detail is truly incredible."],
+  ["Kiran, Sydney", "The custom design process was so smooth. My outfit feels so unique and beautifully made."],
 ];
 
 function Home() {
   useReveal();
-  const craft = categories.slice(1);
   return (
     <>
       {/* Hero */}
@@ -58,10 +60,11 @@ function Home() {
         </div>
       </section>
 
+
       {/* Categories */}
       <Section eyebrow="Explore SohniMutiyaar" title="Discover craftsmanship, colour and contemporary Indian elegance.">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
-          {categories.map((c, i) => (
+          {categories.filter(c => !["daily-wear", "mirror-work"].includes(c.slug)).map((c, i) => (
             <Link key={c.slug} to="/collections/$slug" params={{ slug: c.slug }}
               className={`group relative overflow-hidden reveal ${i === 0 ? "col-span-2 md:row-span-2 aspect-[4/5] md:aspect-auto" : "aspect-[3/4]"}`}>
               <img src={c.image} alt={c.name} loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-[1.5s] group-hover:scale-110" />
@@ -78,7 +81,7 @@ function Home() {
       {/* New */}
       <Section eyebrow="New & Noteworthy" title="Discover our latest designs.">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-12">
-          {[products[2]!, products[8]!, products[10]!, products[12]!].map((p) => <ProductCard key={p.id} p={p} />)}
+          {products.map((p) => <ProductCard key={p.id} p={p} />)}
         </div>
       </Section>
 
@@ -92,46 +95,25 @@ function Home() {
             <p className="mt-6 opacity-80 leading-relaxed">Heirloom embroidery, rich fabrics and a fit made only for you. Every bridal outfit is personally designed with you from first sketch to final stitch.</p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Link to="/collections/$slug" params={{ slug: "bridal" }} className="btn-outline">Explore Bridal</Link>
-              <a href={waLink("Hi SohniMutiyaar By CC, I'd like to book a bridal consultation.")} target="_blank" rel="noreferrer" className="btn-outline">Bridal Consultation</a>
+              <Link to="/contact" className="btn-outline">Bridal Consultation</Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Category rows */}
-      {craft.map((c, i) => (
-        <Section key={c.slug} eyebrow={c.tagline} title={c.name} text={c.description}
-          action={<Link to="/collections/$slug" params={{ slug: c.slug }} className="eyebrow border-b border-foreground pb-1">View all</Link>}>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-5 gap-y-12">
-            <Link to="/collections/$slug" params={{ slug: c.slug }} className={`group relative overflow-hidden aspect-[3/4] col-span-2 reveal ${i % 2 ? "lg:order-last" : ""}`}>
-              <img src={c.image} alt={c.name} loading="lazy" className="absolute inset-0 size-full object-cover transition-transform duration-[1.5s] group-hover:scale-105" />
-            </Link>
-            {productsIn(c.slug).map((p) => <ProductCard key={p.id} p={p} />)}
-          </div>
-        </Section>
-      ))}
 
       {/* Made for you */}
       <section className="bg-secondary py-24 mt-24">
-        <div className="mx-auto max-w-[1500px] px-5 lg:px-10 grid lg:grid-cols-2 gap-16 items-center">
-          <div className="reveal">
+        <div className="mx-auto max-w-4xl px-5 lg:px-10 text-center flex flex-col items-center">
+          <div className="reveal flex flex-col items-center">
             <div className="eyebrow text-primary">Made For You</div>
             <h2 className="mt-5 text-5xl md:text-6xl">Your design. Your measurements. <em className="text-primary">Your story.</em></h2>
-            <p className="mt-6 text-muted-foreground leading-relaxed">Choose your preferred design, fabric, colour, embroidery and finishing details. We create personalised Indian outfits around your style and measurements.</p>
-            <div className="mt-9 flex flex-wrap gap-3">
+            <p className="mt-6 text-muted-foreground leading-relaxed max-w-2xl mx-auto">Choose your preferred design, fabric, colour, embroidery and finishing details. We create personalised Indian outfits around your style and measurements.</p>
+            <div className="mt-9 flex flex-wrap justify-center gap-3">
               <Link to="/custom-designs" className="btn-primary">Start Your Custom Design</Link>
               <Link to="/measurements" className="btn-outline"><Ruler className="size-4" /> Measurement Form</Link>
             </div>
           </div>
-          <ol className="grid sm:grid-cols-2 gap-x-10 gap-y-8">
-            {journey.map(([t, d], i) => (
-              <li key={t} className="reveal border-t border-primary/30 pt-4">
-                <div className="font-serif text-3xl text-primary">0{i + 1}</div>
-                <div className="mt-1 font-serif text-xl">{t}</div>
-                <p className="text-sm text-muted-foreground mt-1">{d}</p>
-              </li>
-            ))}
-          </ol>
         </div>
       </section>
 
@@ -156,15 +138,23 @@ function Home() {
 
       {/* Reviews */}
       <Section eyebrow="Loved Worldwide" title="Words from our brides & clients">
-        <div className="grid md:grid-cols-3 gap-6">
-          {reviews.map(([n, q]) => (
-            <figure key={n} className="reveal bg-card border p-10">
-              <div className="flex gap-1 text-gold">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="size-3.5 fill-current" />)}</div>
-              <blockquote className="mt-6 font-serif text-2xl leading-snug">“{q}”</blockquote>
-              <figcaption className="mt-6 eyebrow text-muted-foreground">{n}</figcaption>
-            </figure>
-          ))}
-        </div>
+        <Carousel className="w-full">
+          <CarouselContent className="-ml-4">
+            {reviews.map(([n, q]) => (
+              <CarouselItem key={n} className="pl-4 md:basis-1/2 lg:basis-1/3">
+                <figure className="reveal bg-card border p-10 h-full">
+                  <div className="flex gap-1 text-gold">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className="size-3.5 fill-current" />)}</div>
+                  <blockquote className="mt-6 font-serif text-2xl leading-snug">“{q}”</blockquote>
+                  <figcaption className="mt-6 eyebrow text-muted-foreground">{n}</figcaption>
+                </figure>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <div className="flex justify-center gap-4 mt-8">
+            <CarouselPrevious className="static translate-y-0" />
+            <CarouselNext className="static translate-y-0" />
+          </div>
+        </Carousel>
       </Section>
 
       {/* Social */}

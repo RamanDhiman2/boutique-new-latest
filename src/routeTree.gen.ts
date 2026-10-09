@@ -15,8 +15,11 @@ import { Route as BagRouteImport } from './routes/bag'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as CustomDesignsRouteImport } from './routes/custom-designs'
 import { Route as MeasurementsRouteImport } from './routes/measurements'
+import { Route as PrivacyPolicyRouteImport } from './routes/privacy-policy'
+import { Route as RefundPolicyRouteImport } from './routes/refund-policy'
 import { Route as ShippingRouteImport } from './routes/shipping'
 import { Route as ShopRouteImport } from './routes/shop'
+import { Route as TermsOfServiceRouteImport } from './routes/terms-of-service'
 import { Route as CollectionsSlugRouteImport } from './routes/collections.$slug'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
 
@@ -50,6 +53,16 @@ const MeasurementsRoute = MeasurementsRouteImport.update({
   path: '/measurements',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrivacyPolicyRoute = PrivacyPolicyRouteImport.update({
+  id: '/privacy-policy',
+  path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RefundPolicyRoute = RefundPolicyRouteImport.update({
+  id: '/refund-policy',
+  path: '/refund-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShippingRoute = ShippingRouteImport.update({
   id: '/shipping',
   path: '/shipping',
@@ -58,6 +71,11 @@ const ShippingRoute = ShippingRouteImport.update({
 const ShopRoute = ShopRouteImport.update({
   id: '/shop',
   path: '/shop',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
+  id: '/terms-of-service',
+  path: '/terms-of-service',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CollectionsSlugRoute = CollectionsSlugRouteImport.update({
@@ -78,8 +96,11 @@ export interface FileRoutesByFullPath {
   '/contact': typeof ContactRoute
   '/custom-designs': typeof CustomDesignsRoute
   '/measurements': typeof MeasurementsRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/shipping': typeof ShippingRoute
   '/shop': typeof ShopRoute
+  '/terms-of-service': typeof TermsOfServiceRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/product/$id': typeof ProductIdRoute
 }
@@ -90,8 +111,11 @@ export interface FileRoutesByTo {
   '/contact': typeof ContactRoute
   '/custom-designs': typeof CustomDesignsRoute
   '/measurements': typeof MeasurementsRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/shipping': typeof ShippingRoute
   '/shop': typeof ShopRoute
+  '/terms-of-service': typeof TermsOfServiceRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/product/$id': typeof ProductIdRoute
 }
@@ -103,8 +127,11 @@ export interface FileRoutesById {
   '/contact': typeof ContactRoute
   '/custom-designs': typeof CustomDesignsRoute
   '/measurements': typeof MeasurementsRoute
+  '/privacy-policy': typeof PrivacyPolicyRoute
+  '/refund-policy': typeof RefundPolicyRoute
   '/shipping': typeof ShippingRoute
   '/shop': typeof ShopRoute
+  '/terms-of-service': typeof TermsOfServiceRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/product/$id': typeof ProductIdRoute
 }
@@ -117,8 +144,11 @@ export interface FileRouteTypes {
     | '/contact'
     | '/custom-designs'
     | '/measurements'
+    | '/privacy-policy'
+    | '/refund-policy'
     | '/shipping'
     | '/shop'
+    | '/terms-of-service'
     | '/collections/$slug'
     | '/product/$id'
   fileRoutesByTo: FileRoutesByTo
@@ -129,8 +159,11 @@ export interface FileRouteTypes {
     | '/contact'
     | '/custom-designs'
     | '/measurements'
+    | '/privacy-policy'
+    | '/refund-policy'
     | '/shipping'
     | '/shop'
+    | '/terms-of-service'
     | '/collections/$slug'
     | '/product/$id'
   id:
@@ -141,8 +174,11 @@ export interface FileRouteTypes {
     | '/contact'
     | '/custom-designs'
     | '/measurements'
+    | '/privacy-policy'
+    | '/refund-policy'
     | '/shipping'
     | '/shop'
+    | '/terms-of-service'
     | '/collections/$slug'
     | '/product/$id'
   fileRoutesById: FileRoutesById
@@ -154,8 +190,11 @@ export interface RootRouteChildren {
   ContactRoute: typeof ContactRoute
   CustomDesignsRoute: typeof CustomDesignsRoute
   MeasurementsRoute: typeof MeasurementsRoute
+  PrivacyPolicyRoute: typeof PrivacyPolicyRoute
+  RefundPolicyRoute: typeof RefundPolicyRoute
   ShippingRoute: typeof ShippingRoute
   ShopRoute: typeof ShopRoute
+  TermsOfServiceRoute: typeof TermsOfServiceRoute
   CollectionsSlugRoute: typeof CollectionsSlugRoute
   ProductIdRoute: typeof ProductIdRoute
 }
@@ -204,6 +243,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MeasurementsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/privacy-policy': {
+      id: '/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof PrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refund-policy': {
+      id: '/refund-policy'
+      path: '/refund-policy'
+      fullPath: '/refund-policy'
+      preLoaderRoute: typeof RefundPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shipping': {
       id: '/shipping'
       path: '/shipping'
@@ -216,6 +269,13 @@ declare module '@tanstack/react-router' {
       path: '/shop'
       fullPath: '/shop'
       preLoaderRoute: typeof ShopRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms-of-service': {
+      id: '/terms-of-service'
+      path: '/terms-of-service'
+      fullPath: '/terms-of-service'
+      preLoaderRoute: typeof TermsOfServiceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/collections/$slug': {
@@ -242,8 +302,11 @@ const rootRouteChildren: RootRouteChildren = {
   ContactRoute: ContactRoute,
   CustomDesignsRoute: CustomDesignsRoute,
   MeasurementsRoute: MeasurementsRoute,
+  PrivacyPolicyRoute: PrivacyPolicyRoute,
+  RefundPolicyRoute: RefundPolicyRoute,
   ShippingRoute: ShippingRoute,
   ShopRoute: ShopRoute,
+  TermsOfServiceRoute: TermsOfServiceRoute,
   CollectionsSlugRoute: CollectionsSlugRoute,
   ProductIdRoute: ProductIdRoute,
 }

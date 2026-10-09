@@ -27,9 +27,8 @@ export function Header() {
       <header className="sticky top-0 z-40 bg-background/90 backdrop-blur border-b">
         <div className="mx-auto max-w-[1500px] px-5 lg:px-10 h-20 flex items-center justify-between gap-4">
           <button className="lg:hidden" onClick={() => setOpen(true)} aria-label="Open menu"><Menu className="size-5" /></button>
-          <Link to="/" className="text-center leading-none">
-            <div className="font-serif text-2xl lg:text-[1.7rem] tracking-wide">SohniMutiyaar <span className="italic text-primary">By CC</span></div>
-            <div className="eyebrow !text-[0.55rem] text-muted-foreground mt-1">Charming Chic</div>
+          <Link to="/" className="flex items-center">
+            <img src="/Maroon and Gold Monogram Fashion Logo.png" alt="SohniMutiyaar By CC" className="h-16 w-auto object-contain" />
           </Link>
           <div className="flex items-center gap-4">
             <Link to="/shop" aria-label="Search" className="hidden sm:block"><Search className="size-[18px]" /></Link>
@@ -41,9 +40,10 @@ export function Header() {
         </div>
         <nav className="hidden lg:flex justify-center gap-7 pb-4 eyebrow !text-[0.66rem]">
           <Link to="/" activeOptions={{ exact: true }} activeProps={{ className: "text-primary" }}>Home</Link>
-          {categories.map((c) => (
+          {categories.filter(c => ["bridal", "shop-by-occasion"].includes(c.slug)).map((c) => (
             <Link key={c.slug} to="/collections/$slug" params={{ slug: c.slug }} activeProps={{ className: "text-primary" }} className="hover:text-primary transition-colors">{c.name}</Link>
           ))}
+          <Link to="/shop" activeProps={{ className: "text-primary" }}>Shop All</Link>
           <Link to="/custom-designs" activeProps={{ className: "text-primary" }}>Custom Designs</Link>
           <Link to="/about" activeProps={{ className: "text-primary" }}>About</Link>
           <Link to="/contact" activeProps={{ className: "text-primary" }}>Contact</Link>
@@ -54,7 +54,8 @@ export function Header() {
           <div className="flex justify-end p-5"><button onClick={() => setOpen(false)} aria-label="Close menu"><X /></button></div>
           <nav className="flex flex-col gap-5 px-8 pb-10 font-serif text-3xl" onClick={() => setOpen(false)}>
             <Link to="/">Home</Link>
-            {categories.map((c) => <Link key={c.slug} to="/collections/$slug" params={{ slug: c.slug }}>{c.name}</Link>)}
+            {categories.filter(c => ["bridal", "shop-by-occasion"].includes(c.slug)).map((c) => <Link key={c.slug} to="/collections/$slug" params={{ slug: c.slug }}>{c.name}</Link>)}
+            <Link to="/shop">Shop All</Link>
             <Link to="/custom-designs" className="italic text-primary">Custom Designs</Link>
             <Link to="/measurements">Measurements</Link>
             <Link to="/about">About</Link>
@@ -83,14 +84,16 @@ export function Footer() {
     <footer className="bg-ink text-ink-foreground mt-24">
       <div className="mx-auto max-w-[1500px] px-5 lg:px-10 py-20 grid gap-12 md:grid-cols-5">
         <div className="md:col-span-1">
-          <div className="font-serif text-3xl">SohniMutiyaar <span className="italic text-gold">By CC</span></div>
+          <Link to="/" className="inline-block bg-background p-3 rounded-lg shadow-md mb-2">
+            <img src="/Maroon and Gold Monogram Fashion Logo.png" alt="SohniMutiyaar By CC" className="h-20 w-auto object-contain" />
+          </Link>
           <p className="mt-4 text-sm opacity-70">Where Tradition Meets Modern Elegance. UK based, shipping worldwide.</p>
         </div>
         <Col title="Shop">{categories.map((c) => <Link key={c.slug} to="/collections/$slug" params={{ slug: c.slug }}>{c.name}</Link>)}</Col>
-        <Col title="Custom">
-          <Link to="/custom-designs">Custom Designs</Link>
-          <Link to="/measurements">Measurement Form</Link>
-          <a href={waLink()} target="_blank" rel="noreferrer">Order via WhatsApp</a>
+        <Col title="Policies">
+          <Link to="/privacy-policy">Privacy Policy</Link>
+          <Link to="/terms-of-service">Terms of Service</Link>
+          <Link to="/refund-policy">Refund Policy</Link>
         </Col>
         <Col title="Customer Care">
           <Link to="/contact">Contact Us</Link>
