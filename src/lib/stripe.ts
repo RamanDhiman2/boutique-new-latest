@@ -12,7 +12,7 @@ export async function createPaymentIntentDevOnly(amount: number, currency: strin
   // We use import.meta.env for VITE_ keys, but since STRIPE_SECRET_KEY shouldn't ideally be VITE_, 
   // for this frontend mock we assume it's exposed or we fetch it. 
   const secretKey = import.meta.env.VITE_STRIPE_SECRET_KEY;
-  
+
   const response = await fetch("https://api.stripe.com/v1/payment_intents", {
     method: "POST",
     headers: {
@@ -25,11 +25,11 @@ export async function createPaymentIntentDevOnly(amount: number, currency: strin
       "automatic_payment_methods[enabled]": "true",
     }),
   });
-  
+
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error?.message || "Failed to create payment intent");
   }
-  
+
   return response.json();
 }
