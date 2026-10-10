@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
-import { gbp } from "@/lib/catalog";
+import { gbp, waLink } from "@/lib/catalog";
 import { supabase, type AddressRecord } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
@@ -10,88 +10,15 @@ import { PageHeader } from "@/components/site/Chrome";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
-import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
-import { stripePromise, createPaymentIntentDevOnly } from "@/lib/stripe";
-
-function CheckoutForm({
-  selectedAddress,
-  checkoutLines,
-  onSuccess,
-}: {
-  selectedAddress: string | null;
-  checkoutLines: any[];
-  onSuccess: () => Promise<void>;
-}) {
-  const stripe = useStripe();
-  const elements = useElements();
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  const handlePayment = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!stripe || !elements || !selectedAddress) {
-      if (!selectedAddress) toast.error("Please select a delivery address first.");
-      return;
-    }
-
-    if (checkoutLines.length === 0) {
-      toast.error("Your bag is empty.");
-      return;
-    }
-
-    setIsProcessing(true);
-
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams: {
-        return_url: window.location.origin + "/order-success",
-      },
-      redirect: "if_required", // Prevent automatic redirect so we can create the order in DB
-    });
-
-    if (error) {
-      toast.error(error.message || "Payment failed");
-      setIsProcessing(false);
-    } else if (paymentIntent && paymentIntent.status === "succeeded") {
-      // Payment successful, now create the order in Supabase
-      await onSuccess();
-      setIsProcessing(false);
-    } else {
-      setIsProcessing(false);
-    }
-  };
-
-  return (
-    <form onSubmit={handlePayment} className="mt-8">
-      <PaymentElement />
-      <button
-        disabled={isProcessing || !stripe || !elements || !selectedAddress || checkoutLines.length === 0}
-        className="w-full mt-8 py-4 bg-foreground text-background font-semibold hover:bg-foreground/90 transition-colors uppercase tracking-wider text-sm disabled:opacity-50"
-      >
-        {isProcessing ? "Processing Payment..." : "Pay Now"}
-      </button>
-    </form>
-  );
-}
-
 export const Route = createFileRoute("/checkout")({
   component: CheckoutPage,
 });
 
 function CheckoutPage() {
   const { user, loading } = useAuth();
-  const { checkoutLines, checkoutTotal, remove } = useCart();
+  const { checkoutLines, checkoutTotal } = useCart();
   const navigate = useNavigate();
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [clientSecret, setClientSecret] = useState("");
-
-  useEffect(() => {
-    if (checkoutTotal > 0) {
-      createPaymentIntentDevOnly(checkoutTotal).then((data) => {
-        setClientSecret(data.client_secret);
-      });
-    }
-  }, [checkoutTotal]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -116,7 +43,7 @@ function CheckoutPage() {
     }
   }, [addresses, selectedAddress]);
 
-  const handlePlaceOrder = async () => {
+  const handleOrderEnquiry = () => {
     if (!selectedAddress) {
       toast.error("Please select a delivery address");
       return;
@@ -126,41 +53,23 @@ function CheckoutPage() {
       return;
     }
 
-    setIsSubmitting(true);
-
-    try {
-      // Secure Server-Side Order Creation
-      const itemsPayload = checkoutLines.map((l) => ({
-        product_id: l.product.id,
-        size: l.size,
-        quantity: l.qty,
-        price: l.product.price,
-      }));
-
-      const { data: orderId, error: orderError } = await supabase.rpc("create_order_secure", {
-        p_address_id: selectedAddress,
-        p_items: itemsPayload,
-      });
-
-      if (orderError) {
-        const errorMsg =
-          typeof orderError === "object" && orderError && "message" in orderError
-            ? String((orderError as { message: string }).message)
-            : "Failed to place order";
-        throw new Error(errorMsg);
-      }
-
-      toast.success("Order placed successfully!");
-
-      // Remove purchased items from the cart
-      checkoutLines.forEach((l) => remove(l.id, l.size));
-
-      navigate({ to: "/order-success" });
-    } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Failed to place order");
-    } finally {
-      setIsSubmitting(false);
+    const address = addresses?.find((item) => item.id === selectedAddress);
+    if (!address) {
+      toast.error("Please select a valid delivery address");
+      return;
     }
+
+    const lines = checkoutLines
+      .map(
+        (line) =>
+          `• ${line.product.name} — ${line.size} × ${line.qty} (${gbp(line.product.price * line.qty)})`,
+      )
+      .join("\n");
+    window.location.assign(
+      waLink(
+        `Hello SohniMutiyaar By CC, I would like to place an order enquiry.\n\n${lines}\n\nTotal: ${gbp(checkoutTotal)}\n\nDelivery details:\n${address.full_name}\n${address.street}\n${address.city}, ${address.state} ${address.zip}\n${address.country}\nPhone: ${address.phone}\n\nPlease confirm availability and payment options.`,
+      ),
+    );
   };
 
   if (loading || !user) return <div className="p-20 text-center">Loading checkout...</div>;
@@ -168,7 +77,7 @@ function CheckoutPage() {
   return (
     <div className="mx-auto max-w-5xl px-5 pt-4 pb-20">
       <SiteBreadcrumb items={[{ label: "Shopping Bag", to: "/bag" }, { label: "Checkout" }]} />
-      <PageHeader eyebrow="Checkout" title="Secure Checkout" />
+      <PageHeader eyebrow="Order Enquiry" title="Complete Your Order" />
 
       <div className="grid md:grid-cols-[1fr_400px] gap-12">
         <div>
@@ -221,6 +130,7 @@ function CheckoutPage() {
                     city: String(fd.get("city") || ""),
                     state: String(fd.get("state") || ""),
                     zip: String(fd.get("zip") || ""),
+                    country: String(fd.get("country") || "United Kingdom"),
                     phone: String(fd.get("phone") || ""),
                   })
                   .select()
@@ -260,6 +170,10 @@ function CheckoutPage() {
                   <Input name="zip" required />
                 </div>
                 <div>
+                  <Label>Country</Label>
+                  <Input name="country" defaultValue="United Kingdom" required />
+                </div>
+                <div>
                   <Label>Phone Number</Label>
                   <Input name="phone" required />
                 </div>
@@ -270,33 +184,15 @@ function CheckoutPage() {
             </form>
           )}
 
-          <h2 className="text-2xl mb-6">2. Payment Method</h2>
+          <h2 className="text-2xl mb-6">2. Confirm Your Enquiry</h2>
           <div className="border p-6 rounded-lg bg-muted/10 mb-8">
-            {clientSecret ? (
-              <Elements
-                stripe={stripePromise}
-                options={{
-                  clientSecret,
-                  appearance: {
-                    theme: "stripe",
-                    variables: {
-                      colorPrimary: "#000000",
-                      colorBackground: "#ffffff",
-                    },
-                  },
-                }}
-              >
-                <CheckoutForm
-                  selectedAddress={selectedAddress}
-                  checkoutLines={checkoutLines}
-                  onSuccess={handlePlaceOrder}
-                />
-              </Elements>
-            ) : (
-              <div className="text-center py-10 text-muted-foreground animate-pulse">
-                Loading secure checkout...
-              </div>
-            )}
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Send your selected pieces to our team on WhatsApp. We will confirm availability,
+              delivery details and secure payment options with you directly.
+            </p>
+            <button type="button" onClick={handleOrderEnquiry} className="btn-primary mt-6 w-full">
+              Send Order Enquiry on WhatsApp
+            </button>
           </div>
         </div>
 
@@ -332,14 +228,13 @@ function CheckoutPage() {
               </div>
               <div className="flex justify-between">
                 <span>Shipping</span>
-                <span>Free</span>
+                <span>Confirmed with our team</span>
               </div>
               <div className="flex justify-between font-serif text-xl pt-4 border-t mt-4">
                 <span>Total</span>
                 <span>{gbp(checkoutTotal)}</span>
               </div>
             </div>
-
           </div>
         </div>
       </div>

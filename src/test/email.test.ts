@@ -17,15 +17,15 @@ describe("EmailJS Service Integration", () => {
   });
 
   it("identifies unconfigured state when environment variables are missing", () => {
-    delete process.env.VITE_EMAILJS_SERVICE_ID;
-    delete process.env.VITE_EMAILJS_TEMPLATE_ID;
-    delete process.env.VITE_EMAILJS_PUBLIC_KEY;
+    delete process.env["VITE_EMAILJS_SERVICE_ID"];
+    delete process.env["VITE_EMAILJS_TEMPLATE_ID"];
+    delete process.env["VITE_EMAILJS_PUBLIC_KEY"];
 
     expect(isEmailJSConfigured()).toBe(false);
   });
 
   it("throws a descriptive error when required env vars are missing upon send", async () => {
-    delete process.env.VITE_EMAILJS_SERVICE_ID;
+    delete process.env["VITE_EMAILJS_SERVICE_ID"];
 
     await expect(
       sendContactEmail({
@@ -37,9 +37,9 @@ describe("EmailJS Service Integration", () => {
   });
 
   it("sends contact enquiry with correct template parameters when configured", async () => {
-    import.meta.env.VITE_EMAILJS_SERVICE_ID = "service_test123";
-    import.meta.env.VITE_EMAILJS_TEMPLATE_ID = "template_test456";
-    import.meta.env.VITE_EMAILJS_PUBLIC_KEY = "public_test789";
+    import.meta.env["VITE_EMAILJS_SERVICE_ID"] = "service_test123";
+    import.meta.env["VITE_EMAILJS_TEMPLATE_ID"] = "template_test456";
+    import.meta.env["VITE_EMAILJS_PUBLIC_KEY"] = "public_test789";
 
     const mockedSend = vi.mocked(emailjs.send).mockResolvedValueOnce({
       status: 200,
@@ -71,9 +71,9 @@ describe("EmailJS Service Integration", () => {
   });
 
   it("generates default subject when not provided", async () => {
-    import.meta.env.VITE_EMAILJS_SERVICE_ID = "service_test123";
-    import.meta.env.VITE_EMAILJS_TEMPLATE_ID = "template_test456";
-    import.meta.env.VITE_EMAILJS_PUBLIC_KEY = "public_test789";
+    import.meta.env["VITE_EMAILJS_SERVICE_ID"] = "service_test123";
+    import.meta.env["VITE_EMAILJS_TEMPLATE_ID"] = "template_test456";
+    import.meta.env["VITE_EMAILJS_PUBLIC_KEY"] = "public_test789";
 
     const mockedSend = vi.mocked(emailjs.send).mockResolvedValueOnce({
       status: 200,

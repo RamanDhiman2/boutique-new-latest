@@ -8,7 +8,14 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { useReveal } from "@/components/site/Chrome";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
 import { WhatsAppIcon } from "@/components/site/WhatsAppButton";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { sendContactEmail } from "@/lib/email";
 
 export const Route = createFileRoute("/product/$id")({
@@ -59,8 +66,8 @@ function ProductPage() {
       setName("");
       setEmail("");
       setMessage("");
-    } catch (err: any) {
-      toast.error(err.message || "Failed to send enquiry.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to send enquiry.");
     } finally {
       setLoading(false);
     }
@@ -85,7 +92,9 @@ function ProductPage() {
                 type="button"
                 onClick={() => setActiveImage(i)}
                 className={`shrink-0 transition-all ${
-                  activeImage === i ? "ring-1 ring-primary ring-offset-2" : "opacity-70 hover:opacity-100"
+                  activeImage === i
+                    ? "ring-1 ring-primary ring-offset-2"
+                    : "opacity-70 hover:opacity-100"
                 }`}
               >
                 <img
@@ -143,7 +152,9 @@ function ProductPage() {
           </div>
           <div className="mt-3 flex flex-col sm:flex-row gap-2">
             <a
-              href={waLink(`Hi SohniMutiyaar By CC, I'd like to enquire about ${p.name} (${gbp(p.price)}). Colour: ${p.colour}.`)}
+              href={waLink(
+                `Hi SohniMutiyaar By CC, I'd like to enquire about ${p.name} (${gbp(p.price)}). Colour: ${p.colour}.`,
+              )}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 inline-flex items-center justify-center gap-2 py-3.5 px-4 bg-[#25D366] hover:bg-[#20ba59] text-white eyebrow !text-[0.68rem] transition-colors rounded-sm shadow-sm"
@@ -165,7 +176,9 @@ function ProductPage() {
                 </DialogHeader>
                 <form onSubmit={handleEmailSubmit} className="space-y-4 mt-4">
                   <div>
-                    <label className="text-xs uppercase tracking-wider mb-1 font-medium block">Name *</label>
+                    <label className="text-xs uppercase tracking-wider mb-1 font-medium block">
+                      Name *
+                    </label>
                     <input
                       required
                       value={name}
@@ -175,7 +188,9 @@ function ProductPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs uppercase tracking-wider mb-1 font-medium block">Email *</label>
+                    <label className="text-xs uppercase tracking-wider mb-1 font-medium block">
+                      Email *
+                    </label>
                     <input
                       required
                       type="email"
@@ -186,7 +201,9 @@ function ProductPage() {
                     />
                   </div>
                   <div>
-                    <label className="text-xs uppercase tracking-wider mb-1 font-medium block">Message *</label>
+                    <label className="text-xs uppercase tracking-wider mb-1 font-medium block">
+                      Message *
+                    </label>
                     <textarea
                       required
                       rows={4}

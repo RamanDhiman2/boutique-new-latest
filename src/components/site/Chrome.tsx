@@ -49,7 +49,11 @@ export function Header() {
           </Link>
 
           <nav className="hidden lg:flex items-center justify-center gap-7 eyebrow !text-[0.66rem] flex-1">
-            <Link to="/" activeOptions={{ exact: true }} activeProps={{ className: "text-primary" }}>
+            <Link
+              to="/"
+              activeOptions={{ exact: true }}
+              activeProps={{ className: "text-primary" }}
+            >
               Home
             </Link>
             <DropdownMenu>
@@ -59,7 +63,11 @@ export function Header() {
               <DropdownMenuContent align="center" className="w-48 bg-background">
                 {categories.map((c) => (
                   <DropdownMenuItem key={c.slug} asChild>
-                    <Link to="/collections/$slug" params={{ slug: c.slug }} className="w-full cursor-pointer uppercase text-xs tracking-wider">
+                    <Link
+                      to="/collections/$slug"
+                      params={{ slug: c.slug }}
+                      className="w-full cursor-pointer uppercase text-xs tracking-wider"
+                    >
                       {c.name}
                     </Link>
                   </DropdownMenuItem>
@@ -169,10 +177,18 @@ export function Footer() {
         </Col>
         <Col title="About">
           <Link to="/about">Our Story</Link>
-          <a href="https://www.instagram.com/sohnimutiyaarofficial_?xtok=MWRxbTBram5uZG9udg==" target="_blank" rel="noreferrer">
+          <a
+            href="https://www.instagram.com/sohnimutiyaarofficial_?xtok=MWRxbTBram5uZG9udg=="
+            target="_blank"
+            rel="noreferrer"
+          >
             Instagram
           </a>
-          <a href="https://www.tiktok.com/@sohnimutiyaarofficial_?_r=1&_t=ZN-9ANTri79OHm" target="_blank" rel="noreferrer">
+          <a
+            href="https://www.tiktok.com/@sohnimutiyaarofficial_?_r=1&_t=ZN-9ANTri79OHm"
+            target="_blank"
+            rel="noreferrer"
+          >
             TikTok
           </a>
         </Col>

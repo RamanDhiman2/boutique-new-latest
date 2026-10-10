@@ -27,7 +27,9 @@ function LoginPage() {
     if (error && typeof error === "object" && "message" in error) {
       const msg = String((error as { message: string }).message);
       if (msg.toLowerCase().includes("invalid login credentials")) {
-        toast.error("Invalid credentials. If you created this account with Google, please use the Google sign-in button.");
+        toast.error(
+          "Invalid credentials. If you created this account with Google, please use the Google sign-in button.",
+        );
       } else {
         toast.error(msg);
       }

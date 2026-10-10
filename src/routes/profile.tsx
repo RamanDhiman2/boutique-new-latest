@@ -104,7 +104,7 @@ function ProfilePage() {
     doc.text(`Order Invoice #${order.id.slice(0, 8)}`, 14, 20);
     doc.text(`Date: ${new Date(order.created_at).toLocaleDateString()}`, 14, 30);
     doc.text(`Status: ${order.status.toUpperCase()}`, 14, 40);
-    
+
     autoTable(doc, {
       startY: 50,
       head: [["Item", "Size", "Quantity", "Price", "Total"]],

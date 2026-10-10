@@ -12,7 +12,7 @@ export const Route = createFileRoute("/bag")({
       { title: "Your Bag — SohniMutiyaar By CC" },
       {
         name: "description",
-        content: "Review your bag and wishlist, then proceed to secure checkout.",
+        content: "Review your bag and wishlist, then send your order enquiry to our team.",
       },
       { property: "og:title", content: "Your Bag — SohniMutiyaar By CC" },
       { property: "og:description", content: "Your selected SohniMutiyaar pieces." },
@@ -130,7 +130,7 @@ function Bag() {
             </div>
             <div className="flex justify-between mb-6 pb-6 border-b">
               <span>Shipping</span>
-              <span>Calculated at checkout</span>
+              <span>Confirmed with our team</span>
             </div>
             <div className="flex justify-between font-serif text-2xl mb-8">
               <span>Total</span>
@@ -140,7 +140,7 @@ function Bag() {
               to="/checkout"
               className={`w-full inline-flex items-center justify-center gap-2 py-4 bg-foreground text-background uppercase tracking-widest text-xs font-semibold ${checkoutLines.length === 0 ? "opacity-50 pointer-events-none" : "hover:bg-foreground/90 transition-colors"}`}
             >
-              Proceed to Checkout
+              Send Order Enquiry
             </Link>
           </div>
         </div>
