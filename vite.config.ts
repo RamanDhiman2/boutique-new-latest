@@ -87,10 +87,9 @@ function stripeDevApiPlugin(): Plugin {
 
 export default defineConfig({
   plugins: [stripeDevApiPlugin()],
-  // The Lovable config defaults Nitro to Cloudflare. This project deploys through Netlify,
-  // so build its server function and static output for Netlify instead.
+  // GoDaddy runs the standalone Nitro Node server from .output/server/index.mjs.
   nitro: {
-    preset: "netlify",
+    preset: "node_server",
   },
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
