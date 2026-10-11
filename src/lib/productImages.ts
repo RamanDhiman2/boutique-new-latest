@@ -106,3 +106,5 @@ export const featuredThreadBanner = p8_w1;
 export const featuredMirrorBanner = p7_main;
 export const featuredAariBanner = p6_main;
 export const featuredHandBanner = p13_main;
+export const featuredSoldOutBanner = p3_main;
+export const featuredUpcomingBanner = p12_main;

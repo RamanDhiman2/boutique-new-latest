@@ -3,14 +3,8 @@ import { Star, CheckCircle, PenLine, Loader2, MessageSquare } from "lucide-react
 import { toast } from "sonner";
 import { supabase, type ProductReviewRecord } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { sendProductReviewNotificationEmail } from "@/lib/email";
 
 interface ProductReviewsProps {
   productId: string;
@@ -98,6 +92,7 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
   const [authorName, setAuthorName] = useState("");
+  const [reviewerEmail, setReviewerEmail] = useState("");
   const [title, setTitle] = useState("");
   const [comment, setComment] = useState("");
 
@@ -114,47 +109,15 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
           .eq("product_id", productId)
           .order("created_at", { ascending: false });
 
-        if (!error && Array.isArray(data) && data.length > 0) {
+        if (!error && Array.isArray(data)) {
+          // Strictly show only real reviews from Supabase!
           if (isMounted) setReviews(data as unknown as ProductReviewRecord[]);
         } else {
-          // Check localStorage or use curated defaults
-          const localKey = `sm_reviews_${productId}`;
-          const localSaved = localStorage.getItem(localKey);
-          if (localSaved) {
-            try {
-              const parsed = JSON.parse(localSaved);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                if (isMounted) setReviews(parsed);
-                return;
-              }
-            } catch {
-              // Ignore parse error
-            }
-          }
-
-          // Use curated default reviews for this product
-          const defaults = CURATED_DEFAULT_REVIEWS[productId] || [
-            {
-              author_name: "Amanpreet Kaur",
-              rating: 5,
-              title: "Impeccable bespoke fit and finish",
-              comment:
-                "Every stitch and detail was made to measure. The tailoring team confirmed all details with me before starting. Highly recommended!",
-              verified_purchase: true,
-              created_at: new Date(Date.now() - 7 * 86400000).toISOString(),
-            },
-          ];
-
-          const formattedDefaults: ProductReviewRecord[] = defaults.map((d, idx) => ({
-            id: `seed_${productId}_${idx}`,
-            product_id: productId,
-            ...d,
-          }));
-
-          if (isMounted) setReviews(formattedDefaults);
+          if (isMounted) setReviews([]);
         }
       } catch (err) {
-        console.warn("Reviews load warning, using local fallback", err);
+        console.warn("Reviews load warning:", err);
+        if (isMounted) setReviews([]);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -167,13 +130,16 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
     };
   }, [productId]);
 
-  // Pre-fill user name if logged in
+  // Pre-fill user name and email if logged in
   useEffect(() => {
     const metaName = user?.user_metadata?.["full_name"];
     if (metaName && !authorName) {
       setAuthorName(String(metaName));
     }
-  }, [user, authorName]);
+    if (user?.email && !reviewerEmail) {
+      setReviewerEmail(user.email);
+    }
+  }, [user, authorName, reviewerEmail]);
 
   const handleSubmitReview = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -202,13 +168,26 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
         console.warn("Supabase insert notification:", error.message);
       }
 
-      // 2. Optimistically update local state & backup in localStorage
+      // 2. Optimistically update local state with the newly created review
       const updated = [newRecord, ...reviews];
       setReviews(updated);
+
+      // 3. Dispatch EmailJS notification to admin/owner
       try {
-        localStorage.setItem(`sm_reviews_${productId}`, JSON.stringify(updated));
-      } catch {
-        // Ignore storage quotas
+        await sendProductReviewNotificationEmail({
+          product_id: productId,
+          product_name: productName,
+          author_name: authorName.trim(),
+          rating,
+          title: title.trim() || "Customer Review",
+          comment: comment.trim(),
+          reviewer_email: reviewerEmail.trim() || user?.email || undefined,
+          verified_purchase: true,
+        });
+        console.log(`[Review Notification] Successfully sent EmailJS alert to admin for review on ${productName}`);
+      } catch (emailErr: any) {
+        console.warn("[Review Notification] EmailJS dispatch error:", emailErr?.message || emailErr);
+        // Never block customer experience if email service encounters an issue
       }
 
       toast.success("Thank you! Your review has been published.");
@@ -312,6 +291,20 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
                   value={authorName}
                   onChange={(e) => setAuthorName(e.target.value)}
                   placeholder="e.g. Harleen Kaur, London"
+                  className="field w-full text-xs"
+                />
+              </div>
+
+              {/* Reviewer Email */}
+              <div>
+                <label className="text-xs font-semibold uppercase tracking-wider block mb-1 text-foreground">
+                  Your Email <span className="text-[10px] text-muted-foreground font-normal lowercase">(optional, kept confidential)</span>
+                </label>
+                <input
+                  type="email"
+                  value={reviewerEmail}
+                  onChange={(e) => setReviewerEmail(e.target.value)}
+                  placeholder="e.g. harleen@example.com"
                   className="field w-full text-xs"
                 />
               </div>

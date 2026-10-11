@@ -48,7 +48,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }))
     .filter((l) => l.product);
 
-  const checkoutLines = full.filter((l) => l.selected);
+  const checkoutLines = full.filter((l) => l.selected && !l.product.soldOut && !l.product.isUpcoming);
 
   const value: Ctx = {
     lines: full,
@@ -57,13 +57,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     total: full.reduce((a, l) => a + l.qty * l.product.price, 0),
     checkoutLines,
     checkoutTotal: checkoutLines.reduce((a, l) => a + l.qty * l.product.price, 0),
-    add: (id, size) =>
+    add: (id, size) => {
+      const prod = products.find((p) => p.id === id);
+      if (prod?.soldOut || prod?.isUpcoming) return;
+
       setLines((ls) => {
         const f = ls.find((l) => l.id === id && l.size === size);
         return f
           ? ls.map((l) => (l === f ? { ...l, qty: l.qty + 1 } : l))
           : [...ls, { id, size, qty: 1, selected: true }];
-      }),
+      });
+    },
     updateQty: (id, size, qty) =>
       setLines((ls) =>
         ls.map((l) => (l.id === id && l.size === size ? { ...l, qty: Math.max(1, qty) } : l)),

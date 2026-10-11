@@ -154,7 +154,7 @@ function Home() {
               bridal moments.
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
-              <Link to="/shop" className="btn-primary">
+              <Link to="/collections" className="btn-primary">
                 Shop Collection
               </Link>
               <Link to="/custom-designs" className="btn-outline">
@@ -172,7 +172,7 @@ function Home() {
       >
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-5">
           {categories
-            .filter((c) => !["daily-wear", "mirror-work"].includes(c.slug))
+            .filter((c) => !["daily-wear", "mirror-work", "sold-out"].includes(c.slug))
             .map((c, i) => (
               <Link
                 key={c.slug}

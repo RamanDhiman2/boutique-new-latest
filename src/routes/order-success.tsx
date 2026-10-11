@@ -3,9 +3,10 @@ import { CheckCircle2, Clock, ShieldCheck, AlertCircle } from "lucide-react";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { gbp } from "@/lib/catalog";
+import { gbp, products } from "@/lib/catalog";
 import { useCart } from "@/lib/cart";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { sendOrderNotificationEmail } from "@/lib/email";
 
 export const Route = createFileRoute("/order-success")({
   validateSearch: (search: Record<string, unknown>): { order_id?: string | undefined; redirect_status?: string | undefined } => {
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/order-success")({
 function OrderSuccessPage() {
   const { order_id } = Route.useSearch();
   const { clear } = useCart();
+  const notificationDispatchedRef = useRef<boolean>(false);
 
   useEffect(() => {
     if (order_id) {
@@ -33,7 +35,7 @@ function OrderSuccessPage() {
       if (!order_id) return null;
       const { data, error } = await supabase
         .from("orders")
-        .select("id, status, payment_status, total_amount, created_at")
+        .select("id, user_id, status, payment_status, total_amount, shipping_address, payment_provider_id, created_at, order_items(id, product_id, size, quantity, price)")
         .eq("id", order_id);
 
       if (error || !data) {
@@ -53,6 +55,94 @@ function OrderSuccessPage() {
 
   const isCaptured = order?.payment_status === "captured";
   const isFailed = order?.payment_status === "failed";
+
+  // Dispatch EmailJS order notification ONLY when payment is authoritatively captured
+  // and deduplicate to ensure only one email is ever sent per order
+  useEffect(() => {
+    if (!order || !isCaptured || !order_id) return;
+
+    const storageKey = `order_notif_sent_${order_id}`;
+    if (notificationDispatchedRef.current || localStorage.getItem(storageKey) === "true") {
+      return;
+    }
+
+    // Mark in-memory immediately to prevent race conditions during rapid re-renders
+    notificationDispatchedRef.current = true;
+
+    async function dispatchNotification() {
+      try {
+        const { data: authData } = await supabase.auth.getSession();
+        const user = authData?.session?.user;
+
+        const shipping = (order.shipping_address as any) || {};
+
+        // Resolve customer details from auth profile or order shipping snapshot
+        const meta = user?.user_metadata as Record<string, any> | undefined;
+        const customerName =
+          meta?.["full_name"] ||
+          meta?.["name"] ||
+          shipping.full_name ||
+          "Customer";
+        const customerEmail =
+          user?.email ||
+          meta?.["email"] ||
+          shipping.email ||
+          "";
+        const customerPhone =
+          user?.phone ||
+          meta?.["phone"] ||
+          shipping.phone ||
+          "";
+
+        // Map order items with catalog names
+        const rawItems = Array.isArray(order.order_items) ? order.order_items : [];
+        const mappedItems = rawItems.map((item: any) => {
+          const matchedProduct = products.find((p) => p.id === item.product_id);
+          return {
+            product_id: item.product_id,
+            product_name: matchedProduct?.name || item.product_id,
+            size: item.size || "Standard",
+            quantity: Number(item.quantity) || 1,
+            price: Number(item.price) || 0,
+          };
+        });
+
+        await sendOrderNotificationEmail({
+          order_id: order.id,
+          order_date: new Date(order.created_at || Date.now()).toLocaleString("en-GB", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          }),
+          order_status: order.status || "processing",
+          payment_status: "captured",
+          payment_method: "Stripe Online Payment (Card)",
+          currency: "GBP",
+          total_amount: Number(order.total_amount) || 0,
+          customer_name: customerName,
+          customer_email: customerEmail,
+          customer_phone: customerPhone,
+          shipping_name: shipping.full_name || customerName,
+          shipping_phone: shipping.phone || customerPhone,
+          shipping_street: shipping.street || "",
+          shipping_apartment: shipping.apartment || undefined,
+          shipping_city: shipping.city || "",
+          shipping_state: shipping.state || "",
+          shipping_zip: shipping.zip || "",
+          shipping_country: shipping.country || "United Kingdom",
+          items: mappedItems,
+        });
+
+        // Mark permanently in client storage to prevent duplicate on page reload
+        localStorage.setItem(storageKey, "true");
+        console.log(`[Order Notification] Successfully sent email notification for Order #${order.id}`);
+      } catch (err: any) {
+        console.warn("[Order Notification] Failed to dispatch email notification:", err?.message || err);
+        // Do not block or disrupt customer experience if email service has issues
+      }
+    }
+
+    dispatchNotification();
+  }, [order, isCaptured, order_id]);
 
   return (
     <div className="mx-auto max-w-5xl px-5 pt-4 pb-20">

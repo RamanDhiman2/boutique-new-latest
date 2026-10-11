@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { categories, products } from "@/lib/catalog";
+import { categories as staticCategories, products as staticProducts } from "@/lib/catalog";
+import { useCategoriesQuery, useAllProductsQuery } from "@/lib/catalogService";
 import { ProductCard } from "@/components/site/ProductCard";
 import { PageHeader, useReveal } from "@/components/site/Chrome";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
@@ -26,8 +27,13 @@ export const Route = createFileRoute("/shop")({
 
 function Shop() {
   const [q, setQ] = useState("");
+  const { data: categories = staticCategories } = useCategoriesQuery();
+  const { data: products = staticProducts } = useAllProductsQuery();
+
   const list = products.filter((p) =>
-    `${p.name} ${p.colour} ${p.category}`.toLowerCase().includes(q.toLowerCase()),
+    `${p.name} ${p.colour} ${p.category} ${p.soldOut ? "sold out" : ""} ${p.isUpcoming ? "upcoming coming soon" : ""}`
+      .toLowerCase()
+      .includes(q.toLowerCase()),
   );
   useReveal();
   return (

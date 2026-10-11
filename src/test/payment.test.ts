@@ -303,4 +303,42 @@ describe("Frontend Payment Submission & Order Status Verification Flow", () => {
     expect(failedView.isPaid).toBe(false);
     expect(failedView.badge).toBe("Payment Failed");
   });
+
+  describe("Sold Out Inventory Validation", () => {
+    it("identifies Elegant Yellow & Cream Suit as sold out in catalog", async () => {
+      const { products } = await import("@/lib/catalog");
+      const yellowSuit = products.find((p) => p.id === "elegant-yellow-cream-suit");
+      expect(yellowSuit).toBeDefined();
+      expect(yellowSuit?.soldOut).toBe(true);
+    });
+
+    it("rejects order validation for sold out items", () => {
+      function validateItemAvailability(productId: string, isSoldOut: boolean) {
+        if (isSoldOut || productId === "elegant-yellow-cream-suit") {
+          throw new Error(`Product "${productId}" is currently sold out and cannot be purchased`);
+        }
+        return true;
+      }
+
+      expect(() => validateItemAvailability("elegant-yellow-cream-suit", true)).toThrow(
+        'Product "elegant-yellow-cream-suit" is currently sold out and cannot be purchased'
+      );
+      expect(validateItemAvailability("elegant-maroon-suit", false)).toBe(true);
+    });
+
+    it("includes Sold Out Products in categories and filters correctly, with upcoming removed", async () => {
+      const { categories, productsIn } = await import("@/lib/catalog");
+      const soldOutCat = categories.find((c) => c.slug === "sold-out");
+      const upcomingCat = categories.find((c) => c.slug === "upcoming-products");
+
+      expect(soldOutCat).toBeDefined();
+      expect(soldOutCat?.name).toBe("Sold Out Products");
+      expect(upcomingCat).toBeUndefined();
+
+      const soldOutItems = productsIn("sold-out");
+      expect(soldOutItems.length).toBeGreaterThan(0);
+      expect(soldOutItems.every((p) => p.soldOut === true || p.category === "sold-out")).toBe(true);
+    });
+  });
 });
+

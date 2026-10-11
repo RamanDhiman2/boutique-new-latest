@@ -68,12 +68,22 @@ export async function processPaymentIntentCreation({
   const productIds = cleanItems.map((it) => it.product_id);
   const { data: dbProducts } = await supabaseClient
     .from("products")
-    .select("id, price")
+    .select("id, name, price, stock, is_sold_out")
     .in("id", productIds);
 
   let calculatedTotal = 0;
   for (const it of cleanItems) {
     const prod = dbProducts?.find((p) => p.id === it.product_id);
+    
+    const isSoldOut =
+      prod?.is_sold_out === true ||
+      (prod?.stock !== null && prod?.stock !== undefined && Number(prod.stock) <= 0) ||
+      it.product_id === "elegant-yellow-cream-suit";
+
+    if (isSoldOut) {
+      throw new Error(`Product "${prod?.name || it.product_id}" is currently sold out and cannot be purchased`);
+    }
+
     const itemPrice =
       prod?.price != null
         ? Number(prod.price)

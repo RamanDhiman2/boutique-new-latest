@@ -187,17 +187,41 @@ function ProductPage() {
 
         {/* Product Details & Ordering Section */}
         <div className="lg:sticky lg:top-32 self-start animate-rise">
-          {p.customisable && (
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[0.62rem] tracking-wider uppercase font-medium">
-              <Sparkles className="size-3" /> Customisation Available
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {p.soldOut && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1A1A1A] text-white text-[0.62rem] tracking-wider uppercase font-semibold border border-white/20">
+                Sold Out
+              </div>
+            )}
+            {p.isUpcoming && (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[0.62rem] tracking-wider uppercase font-semibold border border-primary/20">
+                <Sparkles className="size-3" /> Upcoming Release · Coming Soon
+              </div>
+            )}
+            {p.customisable && (
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[0.62rem] tracking-wider uppercase font-medium">
+                <Sparkles className="size-3" /> Customisation Available
+              </div>
+            )}
+          </div>
 
           <h1 className="mt-3 text-4xl lg:text-5xl font-serif text-foreground leading-tight">{p.name}</h1>
           
           <div className="mt-3 flex items-baseline gap-3">
             <span className="text-3xl font-medium tracking-tight text-foreground">{gbp(p.price)}</span>
-            <span className="text-xs text-muted-foreground uppercase tracking-wider">Inclusive of all taxes · Made to order</span>
+            {p.soldOut ? (
+              <span className="text-xs font-semibold text-destructive uppercase tracking-wider bg-destructive/10 px-2 py-0.5 rounded">
+                Currently Sold Out
+              </span>
+            ) : p.isUpcoming ? (
+              <span className="text-xs font-semibold text-primary uppercase tracking-wider bg-primary/10 px-2 py-0.5 rounded">
+                Preview Only · In Artisan Production
+              </span>
+            ) : (
+              <span className="text-xs text-muted-foreground uppercase tracking-wider">
+                Inclusive of all taxes · Made to order
+              </span>
+            )}
           </div>
 
           {/* Quick Overview Badges (Amazon/Flipkart Style Trust Badges) */}
@@ -237,16 +261,35 @@ function ProductPage() {
 
           {/* Primary Action Buttons */}
           <div className="mt-8 flex gap-3">
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                add(p.id, "Custom");
-                toast.success(`${p.name} added to your bag`);
-              }}
-              className="btn-primary flex-1 py-4 text-xs tracking-widest uppercase font-semibold flex items-center justify-center gap-2"
-            >
-              Add to Bag
-            </button>
+            {p.soldOut ? (
+              <button
+                disabled
+                aria-disabled="true"
+                className="flex-1 py-4 text-xs tracking-widest uppercase font-semibold flex items-center justify-center gap-2 bg-muted text-muted-foreground border border-border cursor-not-allowed select-none"
+              >
+                Sold Out
+              </button>
+            ) : p.isUpcoming ? (
+              <a
+                href={waLink(`Hi SohniMutiyaar By CC, I'd like to pre-register/enquire about the upcoming design: ${p.name} (${gbp(p.price)}).`)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary flex-1 py-4 text-xs tracking-widest uppercase font-semibold flex items-center justify-center gap-2"
+              >
+                <Sparkles className="size-4" /> Pre-Order Enquiry
+              </a>
+            ) : (
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  add(p.id, "Custom");
+                  toast.success(`${p.name} added to your bag`);
+                }}
+                className="btn-primary flex-1 py-4 text-xs tracking-widest uppercase font-semibold flex items-center justify-center gap-2"
+              >
+                Add to Bag
+              </button>
+            )}
             <button
               onClick={(e) => {
                 e.preventDefault();
@@ -261,10 +304,30 @@ function ProductPage() {
             </button>
           </div>
 
+          {p.soldOut && (
+            <div className="mt-3 p-3 bg-muted/60 border border-border rounded-xs text-xs text-muted-foreground leading-relaxed">
+              <span className="font-semibold text-foreground uppercase tracking-wider mr-1.5">Notice:</span>
+              <span>This piece is currently sold out. You can still enquire below on WhatsApp or Email for made-to-measure custom recreation.</span>
+            </div>
+          )}
+
+          {p.isUpcoming && (
+            <div className="mt-3 p-3 bg-primary/5 border border-primary/20 rounded-xs text-xs text-muted-foreground leading-relaxed">
+              <span className="font-semibold text-foreground uppercase tracking-wider mr-1.5">Upcoming Preview:</span>
+              <span>This design is part of our upcoming festive/bridal collection in active atelier production. Enquire below on WhatsApp or Email for pre-orders and advance size reservation.</span>
+            </div>
+          )}
+
           {/* Enquiry CTAs */}
           <div className="mt-3 flex flex-col sm:flex-row gap-2.5">
             <a
-              href={waLink(`Hi SohniMutiyaar By CC, I'd like to enquire about ${p.name} (${gbp(p.price)}). Colour: ${p.colour}.`)}
+              href={waLink(
+                p.soldOut
+                  ? `Hi SohniMutiyaar By CC, I saw that ${p.name} (${gbp(p.price)}) is marked as sold out. I would like to enquire if it can be recreated or custom-tailored for me.`
+                  : p.isUpcoming
+                    ? `Hi SohniMutiyaar By CC, I would like to enquire about pre-ordering the upcoming ${p.name} (${gbp(p.price)}). Colour: ${p.colour}.`
+                    : `Hi SohniMutiyaar By CC, I'd like to enquire about ${p.name} (${gbp(p.price)}). Colour: ${p.colour}.`
+              )}
               target="_blank"
               rel="noopener noreferrer"
               className="flex-1 inline-flex items-center justify-center gap-2 py-3.5 px-4 bg-[#25D366] hover:bg-[#20ba59] text-white text-xs font-semibold tracking-wider uppercase transition-colors rounded-xs shadow-xs"

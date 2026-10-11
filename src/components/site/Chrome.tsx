@@ -8,6 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { categories } from "@/lib/catalog";
+import { useCategoriesQuery } from "@/lib/catalogService";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
 
@@ -30,6 +31,7 @@ export function Header() {
   const { count, wishlist } = useCart();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
+  const { data: navCategories = categories } = useCategoriesQuery();
   return (
     <>
       <div className="bg-primary text-primary-foreground text-center py-2 eyebrow !text-[0.62rem]">
@@ -60,8 +62,17 @@ export function Header() {
               <DropdownMenuTrigger className="flex items-center gap-1 hover:text-primary transition-colors focus:outline-none">
                 CATEGORIES <ChevronDown className="size-3" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-48 bg-background">
-                {categories.map((c) => (
+              <DropdownMenuContent align="center" className="w-52 bg-background p-1.5 shadow-lg">
+                <DropdownMenuItem asChild className="border-b border-border/60 pb-2 mb-1">
+                  <Link
+                    to="/collections"
+                    className="w-full cursor-pointer uppercase text-xs font-bold tracking-wider text-primary flex items-center justify-between"
+                  >
+                    <span>All Collections</span>
+                    <span>→</span>
+                  </Link>
+                </DropdownMenuItem>
+                {navCategories.map((c) => (
                   <DropdownMenuItem key={c.slug} asChild>
                     <Link
                       to="/collections/$slug"
@@ -119,9 +130,11 @@ export function Header() {
             onClick={() => setOpen(false)}
           >
             <Link to="/">Home</Link>
-            <div className="text-primary text-xl italic mt-2">Categories</div>
+            <Link to="/collections" className="text-primary text-xl italic mt-2 hover:underline">
+              All Collections →
+            </Link>
             <div className="flex flex-col gap-4 pl-4 text-2xl">
-              {categories.map((c) => (
+              {navCategories.map((c) => (
                 <Link key={c.slug} to="/collections/$slug" params={{ slug: c.slug }}>
                   {c.name}
                 </Link>
@@ -173,7 +186,6 @@ export function Footer() {
         <Col title="Customer Care">
           <Link to="/contact">Contact Us</Link>
           <Link to="/shipping">Worldwide Shipping</Link>
-          <Link to="/shipping">Returns & Exchanges</Link>
         </Col>
         <Col title="About">
           <Link to="/about">Our Story</Link>

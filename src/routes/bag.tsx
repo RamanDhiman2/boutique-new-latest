@@ -44,7 +44,7 @@ function Bag() {
       {lines.length === 0 ? (
         <div className="text-center">
           <p className="text-muted-foreground">Your bag is empty.</p>
-          <Link to="/shop" className="btn-primary mt-8">
+          <Link to="/collections" className="btn-primary mt-8">
             Shop Collection
           </Link>
         </div>
@@ -62,12 +62,13 @@ function Bag() {
             </div>
             <ul className="divide-y">
               {lines.map((l) => (
-                <li key={l.id + l.size} className="py-6 flex gap-6 items-center">
+                <li key={l.id + l.size} className={`py-6 flex gap-6 items-center ${l.product.soldOut || l.product.isUpcoming ? "opacity-75" : ""}`}>
                   <input
                     type="checkbox"
                     className="size-4 shrink-0"
-                    checked={l.selected ?? true}
-                    onChange={() => toggleSelect(l.id, l.size)}
+                    disabled={l.product.soldOut || l.product.isUpcoming}
+                    checked={!l.product.soldOut && !l.product.isUpcoming && (l.selected ?? true)}
+                    onChange={() => !l.product.soldOut && !l.product.isUpcoming && toggleSelect(l.id, l.size)}
                   />
                   <img
                     src={l.product.images[0]}
@@ -77,13 +78,25 @@ function Bag() {
                   <div className="flex-1 flex flex-col justify-between self-stretch py-1">
                     <div>
                       <div className="flex justify-between items-start">
-                        <Link
-                          to="/product/$id"
-                          params={{ id: l.id }}
-                          className="font-serif text-2xl hover:text-primary transition-colors"
-                        >
-                          {l.product.name}
-                        </Link>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Link
+                            to="/product/$id"
+                            params={{ id: l.id }}
+                            className="font-serif text-2xl hover:text-primary transition-colors"
+                          >
+                            {l.product.name}
+                          </Link>
+                          {l.product.soldOut && (
+                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-destructive/10 text-destructive border border-destructive/20">
+                              Sold Out
+                            </span>
+                          )}
+                          {l.product.isUpcoming && (
+                            <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                              Upcoming Preview
+                            </span>
+                          )}
+                        </div>
                         <button
                           onClick={() => remove(l.id, l.size)}
                           aria-label="Remove"

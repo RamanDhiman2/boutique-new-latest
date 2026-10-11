@@ -1,5 +1,5 @@
 import { createClient, type User, type Session } from "@supabase/supabase-js";
-import { products } from "./catalog";
+import { categories, products } from "./catalog";
 
 const supabaseUrl = import.meta.env["VITE_SUPABASE_URL"];
 const supabaseAnonKey = import.meta.env["VITE_SUPABASE_ANON_KEY"];
@@ -22,6 +22,8 @@ export interface AddressRecord {
   zip: string;
   country: string;
   phone: string;
+  apartment?: string;
+  is_default?: boolean;
   created_at?: string;
 }
 
@@ -37,10 +39,16 @@ export interface OrderRecord {
   id: string;
   user_id: string;
   address_id?: string;
+  shipping_address?: Partial<AddressRecord> | Record<string, any>;
   total_amount: number;
   status: string;
   payment_status?: string;
   payment_provider_id?: string;
+  idempotency_key?: string;
+  tracking_number?: string;
+  carrier?: string;
+  estimated_delivery?: string;
+  cancellation_reason?: string;
   created_at: string;
   order_items: OrderItemRecord[];
 }
@@ -306,6 +314,39 @@ function createMockSupabase() {
                 }
 
                 let genericList = getStorage<Record<string, unknown>[]>(table, []);
+
+                if (table === "categories" && genericList.length === 0) {
+                  genericList = (categories as any[]).map((c, i) => ({
+                    slug: c.slug,
+                    name: c.name,
+                    tagline: c.tagline,
+                    description: c.description,
+                    image: c.image,
+                    display_order: i + 1,
+                    is_active: true,
+                  }));
+                  setStorage("categories", genericList);
+                }
+
+                if (table === "products" && genericList.length === 0) {
+                  genericList = (products as any[]).map((p) => ({
+                    id: p.id,
+                    name: p.name,
+                    price: p.price,
+                    colour: p.colour,
+                    category: p.category,
+                    images: p.images,
+                    sizes: p.sizes,
+                    customisable: p.customisable,
+                    description: p.description,
+                    is_sold_out: Boolean(p.soldOut),
+                    is_upcoming: Boolean(p.isUpcoming),
+                    is_active: true,
+                    stock: p.soldOut ? 0 : 100,
+                  }));
+                  setStorage("products", genericList);
+                }
+
                 if (table === "product_reviews" && genericList.length === 0) {
                   genericList = [
                     {
@@ -375,67 +416,150 @@ function createMockSupabase() {
               promise.order = (_orderCol: string, _opts?: { ascending?: boolean }) => runQuery();
               return promise;
             },
+            order(_col: string, _opts?: { ascending?: boolean }) {
+              let genericList = getStorage<Record<string, unknown>[]>(table, []);
+              if (table === "categories" && genericList.length === 0) {
+                genericList = (categories as any[]).map((c, i) => ({
+                  slug: c.slug,
+                  name: c.name,
+                  tagline: c.tagline,
+                  description: c.description,
+                  image: c.image,
+                  display_order: i + 1,
+                  is_active: true,
+                }));
+                setStorage("categories", genericList);
+              }
+              return Promise.resolve({ data: genericList, error: null });
+            },
+            then(
+              onfulfilled?: ((value: QueryResult<Record<string, unknown>>) => any) | null,
+              onrejected?: ((reason: any) => any) | null,
+            ) {
+              let genericList = getStorage<Record<string, unknown>[]>(table, []);
+              if (table === "categories" && genericList.length === 0) {
+                genericList = (categories as any[]).map((c, i) => ({
+                  slug: c.slug,
+                  name: c.name,
+                  tagline: c.tagline,
+                  description: c.description,
+                  image: c.image,
+                  display_order: i + 1,
+                  is_active: true,
+                }));
+                setStorage("categories", genericList);
+              }
+              if (table === "products" && genericList.length === 0) {
+                genericList = (products as any[]).map((p) => ({
+                  id: p.id,
+                  name: p.name,
+                  price: p.price,
+                  colour: p.colour,
+                  category: p.category,
+                  images: p.images,
+                  sizes: p.sizes,
+                  customisable: p.customisable,
+                  description: p.description,
+                  is_sold_out: Boolean(p.soldOut),
+                  is_upcoming: Boolean(p.isUpcoming),
+                  is_active: true,
+                  stock: p.soldOut ? 0 : 100,
+                }));
+                setStorage("products", genericList);
+              }
+              return Promise.resolve({ data: genericList, error: null }).then(onfulfilled, onrejected);
+            },
           };
         },
         insert(recordOrRecords: unknown) {
-          const runInsert = async (): Promise<SingleResult<Record<string, unknown>>> => {
-            const list = getStorage<Record<string, unknown>[]>(table, []);
-            const payload = Array.isArray(recordOrRecords)
-              ? ((recordOrRecords[0] as Record<string, unknown>) ?? {})
-              : (recordOrRecords as Record<string, unknown>);
-            const newRecord: Record<string, unknown> = {
-              id: "rec_" + Math.random().toString(36).substring(2, 9),
-              created_at: new Date().toISOString(),
-              ...payload,
-            };
-            list.push(newRecord);
-            setStorage(table, list);
-            return {
-              data: newRecord,
-              error: null,
-            };
+          const list = getStorage<Record<string, unknown>[]>(table, []);
+          const payload = Array.isArray(recordOrRecords)
+            ? ((recordOrRecords[0] as Record<string, unknown>) ?? {})
+            : (recordOrRecords as Record<string, unknown>);
+          const newRecord: Record<string, unknown> = {
+            id: "rec_" + Math.random().toString(36).substring(2, 9),
+            created_at: new Date().toISOString(),
+            ...payload,
+          };
+          list.push(newRecord);
+          setStorage(table, list);
+
+          const result: SingleResult<Record<string, unknown>> = {
+            data: newRecord,
+            error: null,
           };
 
-          const promise = runInsert() as Promise<SingleResult<Record<string, unknown>>> & {
-            select(): { single(): Promise<SingleResult<Record<string, unknown>>> };
+          const promise = Promise.resolve(result) as Promise<SingleResult<Record<string, unknown>>> & {
+            select(): { single(): Promise<SingleResult<Record<string, unknown>>>; maybeSingle(): Promise<SingleResult<Record<string, unknown>>> };
           };
 
           promise.select = () => ({
-            single: () => runInsert(),
+            single: () => Promise.resolve(result),
+            maybeSingle: () => Promise.resolve(result),
           });
 
           return promise;
         },
         update(updates: Record<string, unknown>) {
-          return {
+          const filters: Array<{ col: string; val: unknown }> = [];
+
+          const execUpdate = async (): Promise<SingleResult<Record<string, unknown>> & { data: any }> => {
+            const list = getStorage<Record<string, unknown>[]>(table, []);
+            let updatedItem: Record<string, unknown> | null = null;
+            const updatedList = list.map((item) => {
+              const matches = filters.every((f) => item[f.col] === f.val);
+              if (matches) {
+                updatedItem = { ...item, ...updates };
+                return updatedItem;
+              }
+              return item;
+            });
+            setStorage(table, updatedList);
+            return { data: updatedItem, error: null };
+          };
+
+          const builder: any = {
             eq(col: string, val: unknown) {
-              return (async (): Promise<SingleResult<Record<string, unknown>>> => {
-                const list = getStorage<Record<string, unknown>[]>(table, []);
-                let found: Record<string, unknown> | null = null;
-                const updatedList = list.map((item) => {
-                  if (item[col] === val) {
-                    found = { ...item, ...updates };
-                    return found;
-                  }
-                  return item;
-                });
-                setStorage(table, updatedList);
-                return { data: found, error: null };
-              })();
+              filters.push({ col, val });
+              return builder;
+            },
+            select() {
+              return builder;
+            },
+            single() {
+              return execUpdate();
+            },
+            then(onfulfilled?: (val: any) => any, onrejected?: (reason: any) => any) {
+              return execUpdate().then(onfulfilled, onrejected);
             },
           };
+
+          return builder;
         },
         delete() {
-          return {
+          const filters: Array<{ col: string; val: unknown }> = [];
+
+          const execDelete = async (): Promise<{ data: any; error: AuthErrorLike | null }> => {
+            const list = getStorage<Record<string, unknown>[]>(table, []);
+            const updated = list.filter((item) => !filters.every((f) => item[f.col] === f.val));
+            setStorage(table, updated);
+            return { data: null, error: null };
+          };
+
+          const builder: any = {
             eq(col: string, val: unknown) {
-              return (async (): Promise<{ error: AuthErrorLike | null }> => {
-                const list = getStorage<Record<string, unknown>[]>(table, []);
-                const updated = list.filter((r) => r[col] !== val);
-                setStorage(table, updated);
-                return { error: null };
-              })();
+              filters.push({ col, val });
+              return builder;
+            },
+            select() {
+              return builder;
+            },
+            then(onfulfilled?: (val: any) => any, onrejected?: (reason: any) => any) {
+              return execDelete().then(onfulfilled, onrejected);
             },
           };
+
+          return builder;
         },
       };
     },

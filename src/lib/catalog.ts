@@ -20,6 +20,8 @@ import {
   featuredMirrorBanner,
   featuredAariBanner,
   featuredHandBanner,
+  featuredSoldOutBanner,
+  featuredUpcomingBanner,
 } from "./productImages";
 
 export const heroImage = featuredHeroImage;
@@ -92,6 +94,14 @@ export const categories: Category[] = [
     description: "Pearls, zari and hand embroidery — every piece carries the touch of the artisan.",
     image: featuredHandBanner,
   },
+  {
+    slug: "sold-out",
+    name: "Sold Out Products",
+    tagline: "Archived Couture & Heritage Pieces",
+    description:
+      "A tribute to our most cherished, sold-out bespoke creations. Explore past archives or enquire for custom made-to-measure reproductions.",
+    image: featuredSoldOutBanner,
+  },
 ];
 
 export type Product = {
@@ -104,6 +114,8 @@ export type Product = {
   sizes: string[];
   customisable: boolean;
   description: string;
+  soldOut?: boolean;
+  isUpcoming?: boolean;
 };
 
 const S = ["XS", "S", "M", "L", "XL", "Custom"];
@@ -143,6 +155,7 @@ export const products: Product[] = [
     images: product3Images,
     sizes: S,
     customisable: true,
+    soldOut: true,
     description:
       "A beautifully designed suit featuring a yellow georgette shirt, paired with a cream viscose organza salwar and dupatta. The outfit is enhanced with elegant golden seed bead and thread machine work, along with lace detailing on all four sides of the dupatta.\n\nProduct Details:\n• Shirt Fabric: Georgette\n• Salwar Fabric: Viscose Organza\n• Dupatta Fabric: Viscose Organza\n• Colours: Yellow shirt with cream salwar and dupatta\n• Work: Golden seed bead and thread machine work\n• Dupatta Detail: Lace on all four sides\n• Finishing: Neat and fine workmanship",
   },
@@ -266,7 +279,24 @@ export const products: Product[] = [
     description:
       "A beautiful firozi suit crafted from luxurious Banarsi fabric, featuring elegant heavy golden work. Its rich design and neat finishing make it perfect for bridal wear, weddings, Jaago nights, and special occasions.\n\nProduct Details:\n• Suit Colour: Firozi\n• Fabric: Premium Banarsi\n• Work: Heavy Golden Work\n• Style: Bridal and Festive Wear\n• Perfect For: Weddings, Jaago Nights, and Special Events\n• Finishing: Neat and Fine Workmanship",
   },
+  {
+    id: "heritage-ivory-chikankari-sharara",
+    name: "Turquoise Blue Handwork Suit",
+    price: 145,
+    colour: "Turquoise Blue & Gold",
+    category: "hand-work",
+    images: [product4Images[1]!, product4Images[2]!, product4Images[0]!],
+    sizes: S_BRIDAL,
+    customisable: true,
+    description:
+      "A stunning turquoise blue suit crafted with exquisite golden handwork embroidery and delicate pearl detailing. Perfect for celebrations, weddings, and special festive occasions.\n\nProduct Details:\n• Shirt Fabric: Satin Organza\n• Dupatta Fabric: Viscose Organza\n• Colour: Turquoise Blue & Gold\n• Work: Authentic Golden Handwork & Zari Embroidery\n• Finishing: Neat and fine workmanship",
+  },
 ];
 
-export const productsIn = (slug: string) => products.filter((p) => p.category === slug);
+export const productsIn = (slug: string) => {
+  if (slug === "sold-out" || slug === "sold-out-products") {
+    return products.filter((p) => p.soldOut === true || p.category === "sold-out" || p.category === "sold-out-products");
+  }
+  return products.filter((p) => p.category === slug);
+};
 export const gbp = (n: number) => `£${n.toLocaleString("en-GB")}`;

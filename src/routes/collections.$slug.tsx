@@ -1,6 +1,7 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
 import { categories, productsIn } from "@/lib/catalog";
+import { useCategoryProductsQuery } from "@/lib/catalogService";
 import { ProductCard } from "@/components/site/ProductCard";
 import { useReveal } from "@/components/site/Chrome";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
@@ -39,7 +40,7 @@ function CollectionPage() {
   const [sort, setSort] = useState<string>("featured");
   const [custom, setCustom] = useState<boolean>(false);
 
-  const rawProducts = useMemo(() => productsIn(category.slug), [category.slug]);
+  const { data: rawProducts = productsIn(category.slug) } = useCategoryProductsQuery(category.slug);
 
   const list = useMemo(() => {
     let filtered = rawProducts;
@@ -74,7 +75,7 @@ function CollectionPage() {
       </section>
 
       <div className="mx-auto max-w-[1500px] px-5 lg:px-10 pt-4">
-        <SiteBreadcrumb items={[{ label: "Collections", to: "/shop" }, { label: category.name }]} />
+        <SiteBreadcrumb items={[{ label: "Collections", to: "/collections" }, { label: category.name }]} />
       </div>
 
       {/* Interactive Filter & Sort Bar */}
@@ -122,8 +123,28 @@ function CollectionPage() {
         </div>
       </div>
 
+      {/* Category Info Banner for Sold Out & Upcoming */}
+      {category.slug === "sold-out" && (
+        <div className="mx-auto max-w-[1500px] px-5 lg:px-10 pt-6">
+          <div className="p-4 bg-muted/60 border border-border/80 rounded-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div>
+              <span className="font-semibold uppercase tracking-wider text-foreground">Archive Gallery:</span>{" "}
+              <span className="text-muted-foreground">These pieces are out of stock in ready-to-wear sizes, but our artisans can recreate them made-to-measure.</span>
+            </div>
+            <a
+              href="https://wa.me/447393070421?text=Hi%20SohniMutiyaar%20By%20CC%2C%20I'd%20like%20to%20request%20a%20custom%20recreation%20of%20a%20sold-out%20design."
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-primary hover:underline font-semibold uppercase tracking-wider text-[11px] shrink-0"
+            >
+              Request Custom Recreation →
+            </a>
+          </div>
+        </div>
+      )}
+
       {/* Product Grid */}
-      <div className="mx-auto max-w-[1500px] px-5 lg:px-10 pt-12 pb-24">
+      <div className="mx-auto max-w-[1500px] px-5 lg:px-10 pt-10 pb-24">
         {list.length === 0 ? (
           <div className="py-20 text-center">
             <SlidersHorizontal className="size-8 mx-auto text-muted-foreground/60 mb-3" />

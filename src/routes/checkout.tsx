@@ -3,15 +3,16 @@ import { useAuth } from "@/lib/auth";
 import { useCart } from "@/lib/cart";
 import { gbp } from "@/lib/catalog";
 import { supabase, type AddressRecord } from "@/lib/supabase";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Lock, ShieldCheck, ChevronDown, ChevronUp, MapPin, AlertCircle, RefreshCw } from "lucide-react";
+import { Lock, ShieldCheck, ChevronDown, ChevronUp, MapPin, AlertCircle, RefreshCw, Star, Home, Briefcase, Plus } from "lucide-react";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import { stripePromise } from "@/lib/stripe";
+import { AddressForm, type AddressFormData } from "@/components/address/AddressForm";
 
 export const Route = createFileRoute("/checkout")({
   component: CheckoutPage,
@@ -154,9 +155,11 @@ function CheckoutPage() {
   const { user, loading } = useAuth();
   const { checkoutLines, checkoutTotal, remove } = useCart();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   
   const [selectedAddress, setSelectedAddress] = useState<string | null>(null);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
+  const [addressSubmitting, setAddressSubmitting] = useState(false);
   const [summaryExpanded, setSummaryExpanded] = useState(false);
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -177,16 +180,31 @@ function CheckoutPage() {
     queryFn: async () => {
       const { data, error } = await supabase.from("addresses").select("*").eq("user_id", user?.id);
       if (error) throw error;
-      return (data as unknown as AddressRecord[]) ?? [];
+      const all = (data as unknown as AddressRecord[]) ?? [];
+      const deletedLocal: string[] = (() => {
+        try {
+          return JSON.parse(localStorage.getItem(`deleted_addrs_${user?.id}`) || "[]");
+        } catch {
+          return [];
+        }
+      })();
+      return all.filter((addr: any) => !addr.is_deleted && !deletedLocal.includes(addr.id));
     },
     enabled: !!user,
   });
 
   useEffect(() => {
-    if (!selectedAddress && addresses && addresses.length > 0 && addresses[0]) {
-      setSelectedAddress(addresses[0].id);
+    if (!selectedAddress && addresses && addresses.length > 0) {
+      // Prioritize default address
+      const defaultId = user ? localStorage.getItem(`default_addr_${user.id}`) : null;
+      const defaultAddr = addresses.find((a) => a.is_default || a.id === defaultId);
+      if (defaultAddr) {
+        setSelectedAddress(defaultAddr.id);
+      } else if (addresses[0]) {
+        setSelectedAddress(addresses[0].id);
+      }
     }
-  }, [addresses, selectedAddress]);
+  }, [addresses, selectedAddress, user]);
 
   const initializeCheckout = async (isRetry = false) => {
     if (!selectedAddress || checkoutLines.length === 0 || !user) return;
@@ -249,37 +267,87 @@ function CheckoutPage() {
     });
   };
 
-  const handleAddAddress = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const { data, error } = await supabase
-      .from("addresses")
-      .insert({
-        user_id: user!.id,
-        type: "Shipping",
-        full_name: String(fd.get("full_name") || ""),
-        street: String(fd.get("street") || ""),
-        city: String(fd.get("city") || ""),
-        state: String(fd.get("state") || ""),
-        zip: String(fd.get("zip") || ""),
-        country: String(fd.get("country") || "United Kingdom"),
-        phone: String(fd.get("phone") || ""),
-      })
-      .select()
-      .single();
+  const handleAddAddress = async (formData: AddressFormData) => {
+    if (!user) return;
+    setAddressSubmitting(true);
 
-    if (error) {
-      toast.error("Failed to save address");
-      return;
-    }
-    toast.success("Address saved!");
-    refetch();
-    setIsAddingAddress(false);
-    if (data && typeof data === "object" && "id" in data) {
-      setSelectedAddress(String((data as { id: string }).id));
-      idempotencyKeyRef.current = `chk_${Math.random().toString(36).substring(2, 10)}_${Date.now()}`;
-      setClientSecret(null);
-      setCreatedOrderId(null);
+    try {
+      if (formData.is_default) {
+        try {
+          await supabase
+            .from("addresses")
+            .update({ is_default: false })
+            .eq("user_id", user.id);
+        } catch {
+          // ignore
+        }
+      }
+
+      const combinedStreet = formData.apartment
+        ? `${formData.street}, ${formData.apartment}`
+        : formData.street;
+
+      const basePayload: Record<string, any> = {
+        type: formData.type || "Home",
+        full_name: formData.full_name,
+        street: combinedStreet,
+        city: formData.city,
+        state: formData.state,
+        zip: formData.zip,
+        country: formData.country,
+        phone: formData.phone,
+        user_id: user.id,
+      };
+
+      const extendedPayload: Record<string, any> = {
+        ...basePayload,
+        street: formData.street,
+        apartment: formData.apartment || null,
+        is_default: Boolean(formData.is_default),
+        is_deleted: false,
+      };
+
+      let insertRes = await supabase
+        .from("addresses")
+        .insert(extendedPayload)
+        .select()
+        .single();
+
+      if (insertRes.error) {
+        const errMsg = insertRes.error.message || "";
+        if (errMsg.includes("column") || errMsg.includes("schema cache") || (insertRes.error as any).code === "PGRST204") {
+          insertRes = await supabase
+            .from("addresses")
+            .insert(basePayload)
+            .select()
+            .single();
+        }
+      }
+
+      if (insertRes.error) {
+        throw new Error(insertRes.error.message || "Failed to save address");
+      }
+
+      toast.success("Delivery address saved!");
+      await queryClient.invalidateQueries({ queryKey: ["addresses"] });
+      await refetch();
+      setIsAddingAddress(false);
+
+      if (insertRes.data && typeof insertRes.data === "object" && "id" in insertRes.data) {
+        const newId = String((insertRes.data as { id: string }).id);
+        setSelectedAddress(newId);
+        if (formData.is_default) {
+          localStorage.setItem(`default_addr_${user.id}`, newId);
+        }
+        idempotencyKeyRef.current = `chk_${Math.random().toString(36).substring(2, 10)}_${Date.now()}`;
+        setClientSecret(null);
+        setCreatedOrderId(null);
+      }
+    } catch (err: any) {
+      console.error("Save address in checkout error:", err);
+      toast.error(err.message || "Failed to save address");
+    } finally {
+      setAddressSubmitting(false);
     }
   };
 
@@ -330,103 +398,113 @@ function CheckoutPage() {
               
               {addresses && addresses.length > 0 && !isAddingAddress ? (
                 <div className="space-y-4">
-                  {addresses.map((address) => (
-                    <label
-                      key={address.id}
-                      className={`block bg-white p-5 rounded-sm border cursor-pointer transition-all ${
-                        selectedAddress === address.id 
-                          ? "border-[#6B2C3A] ring-1 ring-[#6B2C3A] shadow-sm" 
-                          : "border-black/10 hover:border-black/30"
-                      }`}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {addresses.map((address) => {
+                      const isDefault = Boolean(address.is_default) || localStorage.getItem(`default_addr_${user.id}`) === address.id;
+                      const isSelected = selectedAddress === address.id;
+
+                      return (
+                        <div
+                          key={address.id}
+                          onClick={() => setSelectedAddress(address.id)}
+                          className={`relative p-5 rounded-md border text-left cursor-pointer transition-all ${
+                            isSelected
+                              ? "border-[#6B2C3A] bg-[#6B2C3A]/[0.02] shadow-sm ring-1 ring-[#6B2C3A]"
+                              : "border-black/10 bg-white hover:border-black/30"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="radio"
+                                id={`addr-${address.id}`}
+                                name="address-selection"
+                                checked={isSelected}
+                                onChange={() => setSelectedAddress(address.id)}
+                                className="size-4 text-[#6B2C3A] accent-[#6B2C3A] cursor-pointer"
+                              />
+                              <label htmlFor={`addr-${address.id}`} className="font-semibold text-sm cursor-pointer">
+                                {address.full_name}
+                              </label>
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                              {address.type && (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded bg-muted text-foreground border border-black/5">
+                                  {address.type.toLowerCase() === "work" ? (
+                                    <Briefcase className="size-3 text-muted-foreground" />
+                                  ) : address.type.toLowerCase() === "home" ? (
+                                    <Home className="size-3 text-muted-foreground" />
+                                  ) : (
+                                    <MapPin className="size-3 text-muted-foreground" />
+                                  )}
+                                  <span className="capitalize">{address.type}</span>
+                                </span>
+                              )}
+                              {isDefault && (
+                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded bg-[#6B2C3A] text-white">
+                                  <Star className="size-3 fill-current" />
+                                  Default
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="text-xs text-muted-foreground leading-relaxed pl-6 space-y-0.5">
+                            <p className="text-foreground font-medium">{address.street}</p>
+                            {address.apartment && (
+                              <p className="text-muted-foreground">{address.apartment}</p>
+                            )}
+                            <p>
+                              {address.city}, {address.state} {address.zip}
+                            </p>
+                            <p className="font-medium text-foreground/80">{address.country}</p>
+                            {address.phone && (
+                              <p className="pt-1.5 text-xs text-foreground/70 flex items-center gap-1.5">
+                                <span>Phone:</span>
+                                <span className="font-mono text-foreground">{address.phone}</span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  <div className="pt-2 flex items-center justify-between">
+                    <button 
+                      type="button"
+                      onClick={() => setIsAddingAddress(true)}
+                      className="inline-flex items-center gap-2 text-sm font-medium tracking-wide text-[#6B2C3A] hover:underline underline-offset-4 transition-colors"
                     >
-                      <div className="flex items-start gap-4">
-                        <div className="mt-1 flex-shrink-0">
-                          <input
-                            type="radio"
-                            name="address"
-                            className="size-4 text-[#6B2C3A] focus:ring-[#6B2C3A]"
-                            checked={selectedAddress === address.id}
-                            onChange={() => {
-                              setSelectedAddress(address.id);
-                            }}
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <div className="font-medium text-[15px] mb-1">
-                            {address.full_name}
-                            <span className="inline-block align-middle ml-2 text-[10px] uppercase tracking-wider bg-black/5 px-2 py-0.5 rounded-sm text-muted-foreground">
-                              {address.type}
-                            </span>
-                          </div>
-                          <div className="text-sm text-muted-foreground leading-relaxed">
-                            {address.street}<br />
-                            {address.city}, {address.state} {address.zip}<br />
-                            {address.country}
-                          </div>
-                          <div className="text-sm text-muted-foreground mt-2">
-                            {address.phone}
-                          </div>
-                        </div>
-                      </div>
-                    </label>
-                  ))}
-                  <button 
-                    onClick={() => setIsAddingAddress(true)}
-                    className="mt-6 text-sm font-medium tracking-wide underline underline-offset-4 hover:text-[#6B2C3A] transition-colors"
-                  >
-                    + Add a new address
-                  </button>
+                      <Plus className="size-4" />
+                      Add a new delivery address
+                    </button>
+                  </div>
                 </div>
               ) : (
-                <form
-                  onSubmit={handleAddAddress}
-                  className="bg-white p-6 md:p-8 rounded-sm border border-black/5 shadow-sm space-y-6"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2">
-                      <Label className="text-xs uppercase tracking-wider text-muted-foreground">Full Name</Label>
-                      <Input name="full_name" required className="mt-1.5 rounded-sm border-black/10 focus-visible:ring-[#6B2C3A]" />
-                    </div>
-                    <div className="md:col-span-2">
-                      <Label className="text-xs uppercase tracking-wider text-muted-foreground">Street Address</Label>
-                      <Input name="street" required className="mt-1.5 rounded-sm border-black/10 focus-visible:ring-[#6B2C3A]" />
-                    </div>
-                    <div>
-                      <Label className="text-xs uppercase tracking-wider text-muted-foreground">City</Label>
-                      <Input name="city" required className="mt-1.5 rounded-sm border-black/10 focus-visible:ring-[#6B2C3A]" />
-                    </div>
-                    <div>
-                      <Label className="text-xs uppercase tracking-wider text-muted-foreground">State / County</Label>
-                      <Input name="state" required className="mt-1.5 rounded-sm border-black/10 focus-visible:ring-[#6B2C3A]" />
-                    </div>
-                    <div>
-                      <Label className="text-xs uppercase tracking-wider text-muted-foreground">Postcode / Zip</Label>
-                      <Input name="zip" required className="mt-1.5 rounded-sm border-black/10 focus-visible:ring-[#6B2C3A]" />
-                    </div>
-                    <div>
-                      <Label className="text-xs uppercase tracking-wider text-muted-foreground">Country</Label>
-                      <Input name="country" defaultValue="United Kingdom" required className="mt-1.5 rounded-sm border-black/10 focus-visible:ring-[#6B2C3A]" />
-                    </div>
-                    <div className="md:col-span-2">
-                      <Label className="text-xs uppercase tracking-wider text-muted-foreground">Phone Number</Label>
-                      <Input name="phone" type="tel" required className="mt-1.5 rounded-sm border-black/10 focus-visible:ring-[#6B2C3A]" />
-                    </div>
-                  </div>
-                  <div className="flex gap-4 pt-4 border-t border-black/5 mt-8">
-                    <button type="submit" className="bg-[#1A1A1A] text-white px-8 py-3 text-sm tracking-wider uppercase font-medium hover:bg-black transition-colors rounded-sm">
-                      Save & Continue
-                    </button>
+                <div className="bg-white p-6 md:p-8 rounded-md border border-black/10 shadow-sm">
+                  <div className="mb-6 flex items-center justify-between border-b border-black/5 pb-3">
+                    <h3 className="font-serif text-lg text-foreground">
+                      {addresses && addresses.length > 0 ? "Add New Delivery Address" : "Enter Delivery Address"}
+                    </h3>
                     {addresses && addresses.length > 0 && (
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setIsAddingAddress(false)}
-                        className="px-6 py-3 text-sm tracking-wider uppercase font-medium hover:bg-black/5 transition-colors rounded-sm"
+                        className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
                       >
-                        Cancel
+                        Cancel and use saved address
                       </button>
                     )}
                   </div>
-                </form>
+                  <AddressForm
+                    onSubmit={handleAddAddress}
+                    onCancel={addresses && addresses.length > 0 ? () => setIsAddingAddress(false) : undefined}
+                    isSubmitting={addressSubmitting}
+                    submitLabel="Deliver to this Address"
+                    cancelLabel="Back to Saved Addresses"
+                  />
+                </div>
               )}
             </section>
 

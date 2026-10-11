@@ -3,14 +3,16 @@ import { useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
 import { supabase, type AddressRecord, type OrderRecord } from "@/lib/supabase";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
-import { Download, Package, CheckCircle, Truck, XCircle } from "lucide-react";
+import { Download, Package, CheckCircle, Truck, XCircle, Edit2, Trash2, Plus, Loader2, Star, Home, Briefcase, MapPin } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { AddressForm, type AddressFormData } from "@/components/address/AddressForm";
+import { OrderHistoryView } from "@/components/orders/OrderHistoryView";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -20,11 +22,16 @@ function ProfilePage() {
   const { user, loading } = useAuth();
   const { clear } = useCart();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
   const [editingAddress, setEditingAddress] = useState<AddressRecord | null>(null);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
+  const [addressSubmitting, setAddressSubmitting] = useState(false);
+  const [deletingAddressId, setDeletingAddressId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const addressFormRef = useRef<HTMLFormElement | null>(null);
   const [savedTailorSlip, setSavedTailorSlip] = useState<{
     refId?: string;
     savedAt?: string;
@@ -49,7 +56,15 @@ function ProfilePage() {
     queryFn: async () => {
       const { data, error } = await supabase.from("addresses").select("*").eq("user_id", user?.id);
       if (error) throw error;
-      return (data as unknown as AddressRecord[]) ?? [];
+      const all = (data as unknown as AddressRecord[]) ?? [];
+      const deletedLocal: string[] = (() => {
+        try {
+          return JSON.parse(localStorage.getItem(`deleted_addrs_${user?.id}`) || "[]");
+        } catch {
+          return [];
+        }
+      })();
+      return all.filter((addr: any) => !addr.is_deleted && !deletedLocal.includes(addr.id));
     },
     enabled: !!user,
   });
@@ -123,66 +138,253 @@ function ProfilePage() {
     doc.save(`Order_${order.id.slice(0, 8)}.pdf`);
   };
 
+  const startEditAddress = (address: AddressRecord) => {
+    setIsAddingAddress(false);
+    setEditingAddress(address);
+    setConfirmDeleteId(null);
+    setTimeout(() => {
+      addressFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      const firstInput = addressFormRef.current?.querySelector("input");
+      firstInput?.focus();
+    }, 50);
+  };
+
+  const startAddAddress = () => {
+    setEditingAddress(null);
+    setIsAddingAddress(true);
+    setConfirmDeleteId(null);
+    setTimeout(() => {
+      addressFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      const firstInput = addressFormRef.current?.querySelector("input");
+      firstInput?.focus();
+    }, 50);
+  };
+
   const handleDeleteAddress = async (addressId: string) => {
-    if (!confirm("Delete this address?")) return;
-    const { error } = await supabase.from("addresses").delete().eq("id", addressId);
-    if (error && typeof error === "object" && "message" in error) {
-      toast.error(String((error as { message: string }).message));
-    } else {
-      toast.success("Address deleted");
-      refetchAddresses();
+    if (!user) return;
+    setDeletingAddressId(addressId);
+    try {
+      // 1. Try safe backend RPC if available
+      const { data: rpcData, error: rpcError } = await supabase.rpc("delete_address_safe", {
+        p_address_id: addressId,
+      });
+
+      if (!rpcError && rpcData) {
+        toast.success("Address removed successfully");
+        if (editingAddress?.id === addressId) {
+          setEditingAddress(null);
+        }
+        setConfirmDeleteId(null);
+        await queryClient.invalidateQueries({ queryKey: ["addresses"] });
+        await refetchAddresses();
+        return;
+      }
+
+      // 2. Direct hard delete attempt
+      const { error: delError } = await supabase
+        .from("addresses")
+        .delete()
+        .eq("id", addressId);
+
+      if (delError) {
+        const errObj = delError as { message?: string; code?: string };
+        const isConstraintError =
+          errObj.code === "23502" ||
+          errObj.code === "23503" ||
+          errObj.message?.includes("violates not-null constraint") ||
+          errObj.message?.includes("violates foreign key constraint") ||
+          errObj.message?.includes("address_id");
+
+        if (isConstraintError) {
+          // Relational constraint: this address is attached to past orders.
+          // Amazon/Flipkart standard: keep snapshot for past orders while removing from customer address book.
+          try {
+            await supabase
+              .from("addresses")
+              .update({ is_deleted: true, is_default: false })
+              .eq("id", addressId);
+          } catch {
+            // ignore if column not present yet
+          }
+
+          // Persist removal to local client cache so it disappears immediately
+          try {
+            const currentDeleted: string[] = JSON.parse(
+              localStorage.getItem(`deleted_addrs_${user.id}`) || "[]"
+            );
+            if (!currentDeleted.includes(addressId)) {
+              currentDeleted.push(addressId);
+              localStorage.setItem(`deleted_addrs_${user.id}`, JSON.stringify(currentDeleted));
+            }
+          } catch (e) {
+            console.error("Local delete cache error:", e);
+          }
+
+          toast.success("Address removed from your saved addresses");
+          if (editingAddress?.id === addressId) {
+            setEditingAddress(null);
+          }
+          setConfirmDeleteId(null);
+          await queryClient.invalidateQueries({ queryKey: ["addresses"] });
+          await refetchAddresses();
+          return;
+        }
+
+        throw new Error(errObj.message || "Failed to delete address");
+      }
+
+      toast.success("Address deleted successfully");
+      if (editingAddress?.id === addressId) {
+        setEditingAddress(null);
+      }
+      setConfirmDeleteId(null);
+      await queryClient.invalidateQueries({ queryKey: ["addresses"] });
+      await refetchAddresses();
+    } catch (err: any) {
+      console.error("Delete address error:", err);
+      toast.error(err.message || "Could not delete address");
+    } finally {
+      setDeletingAddressId(null);
     }
   };
 
-  const handleSaveAddress = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const fd = new FormData(e.currentTarget);
-    const addressData = {
-      type: String(fd.get("type") || "Shipping").trim(),
-      full_name: String(fd.get("full_name") || "").trim(),
-      street: String(fd.get("street") || "").trim(),
-      city: String(fd.get("city") || "").trim(),
-      state: String(fd.get("state") || "").trim(),
-      zip: String(fd.get("zip") || "").trim(),
-      country: String(fd.get("country") || "United Kingdom").trim(),
-      phone: String(fd.get("phone") || "").trim(),
-    };
+  const handleSetDefaultAddress = async (addressId: string) => {
+    if (!user) return;
+    try {
+      // 1. Try safe RPC if migration exists
+      const { error: rpcError } = await supabase.rpc("set_default_address", { p_address_id: addressId });
+      if (rpcError) {
+        // Fallback: update is_default directly in table if column exists
+        await supabase
+          .from("addresses")
+          .update({ is_default: false })
+          .eq("user_id", user.id);
 
-    if (!addressData.full_name || !addressData.street || !addressData.city || !addressData.zip) {
-      toast.error("Please fill in all required address fields");
+        const { error: updateErr } = await supabase
+          .from("addresses")
+          .update({ is_default: true })
+          .eq("id", addressId);
+
+        if (updateErr) {
+          localStorage.setItem(`default_addr_${user.id}`, addressId);
+        }
+      }
+      localStorage.setItem(`default_addr_${user.id}`, addressId);
+      toast.success("Default address updated");
+      await queryClient.invalidateQueries({ queryKey: ["addresses"] });
+      await refetchAddresses();
+    } catch (err: any) {
+      console.error("Set default error:", err);
+      localStorage.setItem(`default_addr_${user.id}`, addressId);
+      toast.success("Default address updated");
+      await refetchAddresses();
+    }
+  };
+
+  const handleSaveAddress = async (formData: AddressFormData) => {
+    if (!user) {
+      toast.error("Please login to save addresses");
       return;
     }
 
-    if (editingAddress) {
-      const { error } = await supabase
-        .from("addresses")
-        .update(addressData)
-        .eq("id", editingAddress.id);
-      if (error && typeof error === "object" && "message" in error) {
-        toast.error(String((error as { message: string }).message));
-      } else {
+    setAddressSubmitting(true);
+    try {
+      // Base payload compatible with current remote DB table schema
+      const combinedStreet = formData.apartment
+        ? `${formData.street}, ${formData.apartment}`
+        : formData.street;
+
+      const basePayload: Record<string, any> = {
+        user_id: user.id,
+        type: formData.type || "Home",
+        full_name: formData.full_name,
+        street: combinedStreet,
+        city: formData.city,
+        state: formData.state,
+        zip: formData.zip,
+        country: formData.country,
+        phone: formData.phone,
+      };
+
+      // Extended payload if migration was run
+      const extendedPayload: Record<string, any> = {
+        ...basePayload,
+        street: formData.street,
+        apartment: formData.apartment || null,
+        is_default: Boolean(formData.is_default),
+        is_deleted: false,
+      };
+
+      if (editingAddress) {
+        let updateRes = await supabase
+          .from("addresses")
+          .update(extendedPayload)
+          .eq("id", editingAddress.id);
+
+        // Fallback to base payload if remote schema doesn't have apartment or is_default yet
+        if (updateRes.error) {
+          const errMsg = updateRes.error.message || "";
+          if (errMsg.includes("column") || errMsg.includes("schema cache") || (updateRes.error as any).code === "PGRST204") {
+            const updateBase = { ...basePayload };
+            delete updateBase["user_id"]; // don't re-assign user_id on update
+            updateRes = await supabase
+              .from("addresses")
+              .update(updateBase)
+              .eq("id", editingAddress.id);
+          }
+        }
+
+        if (updateRes.error) {
+          throw new Error(updateRes.error.message || "Failed to update address");
+        }
+
+        if (formData.is_default) {
+          localStorage.setItem(`default_addr_${user.id}`, editingAddress.id);
+        }
+
         toast.success("Address updated successfully");
         setEditingAddress(null);
         setIsAddingAddress(false);
-        refetchAddresses();
-      }
-    } else {
-      const { error } = await supabase
-        .from("addresses")
-        .insert({
-          ...addressData,
-          user_id: user.id,
-        })
-        .select()
-        .single();
-      if (error && typeof error === "object" && "message" in error) {
-        toast.error(String((error as { message: string }).message));
       } else {
+        let insertRes = await supabase
+          .from("addresses")
+          .insert(extendedPayload)
+          .select()
+          .single();
+
+        // Fallback to base payload if remote schema doesn't have new columns yet
+        if (insertRes.error) {
+          const errMsg = insertRes.error.message || "";
+          if (errMsg.includes("column") || errMsg.includes("schema cache") || (insertRes.error as any).code === "PGRST204") {
+            insertRes = await supabase
+              .from("addresses")
+              .insert(basePayload)
+              .select()
+              .single();
+          }
+        }
+
+        if (insertRes.error) {
+          throw new Error(insertRes.error.message || "Failed to add address");
+        }
+
+        const newId = insertRes.data && (insertRes.data as any).id;
+        if (formData.is_default && newId) {
+          localStorage.setItem(`default_addr_${user.id}`, newId);
+        }
+
         toast.success("Address added successfully");
         setIsAddingAddress(false);
         setEditingAddress(null);
-        refetchAddresses();
       }
+
+      await queryClient.invalidateQueries({ queryKey: ["addresses"] });
+      await refetchAddresses();
+    } catch (err: any) {
+      console.error("Save address error:", err);
+      toast.error(err.message || "Failed to save address");
+    } finally {
+      setAddressSubmitting(false);
     }
   };
 
@@ -388,251 +590,197 @@ function ProfilePage() {
 
           {activeTab === "orders" && (
             <>
-              <h2 className="text-2xl mb-6">Order History</h2>
-              {!orders?.length ? (
-                <p className="text-muted-foreground">You haven't placed any orders yet.</p>
-              ) : (
-                <div className="space-y-6">
-                  {orders.map((order) => (
-                    <div key={order.id} className="border p-6 rounded-lg">
-                      <div className="flex justify-between items-center mb-4 pb-4 border-b">
-                        <div>
-                          <div className="font-medium">Order #{order.id.split("-")[0]}</div>
-                          <div className="text-sm text-muted-foreground" suppressHydrationWarning>
-                            {new Date(order.created_at).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div className="text-right flex flex-col items-end gap-1">
-                          <div className="font-medium">£{order.total_amount}</div>
-                          <div className="flex items-center gap-2">
-                            {order.payment_status === "captured" ? (
-                              <span className="text-[10px] uppercase font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-xs tracking-wider">
-                                Paid
-                              </span>
-                            ) : order.payment_status === "failed" ? (
-                              <span className="text-[10px] uppercase font-semibold bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded-xs tracking-wider">
-                                Payment Failed
-                              </span>
-                            ) : order.payment_status === "refunded" ? (
-                              <span className="text-[10px] uppercase font-semibold bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-xs tracking-wider">
-                                Refunded
-                              </span>
-                            ) : (
-                              <span className="text-[10px] uppercase font-semibold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-xs tracking-wider">
-                                Payment Pending
-                              </span>
-                            )}
-                            <span
-                              className={`text-xs uppercase font-medium tracking-wider ${
-                                order.status === "cancelled" ? "text-destructive" : "text-muted-foreground"
-                              }`}
-                            >
-                              {order.status === "processing" ? "In Production" : order.status}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="space-y-2 mb-4">
-                        {order.order_items.map((item) => (
-                          <div key={item.id} className="flex justify-between text-sm">
-                            <span>
-                              {item.quantity}x {item.product_id} (Size: {item.size})
-                            </span>
-                            <span>£{item.price}</span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {trackingOrderId === order.id && (
-                        <div className="mb-6 pt-2 pb-4 border-b">
-                          {renderTimeline(order.status)}
-                        </div>
-                      )}
-
-                      <div className="border-t pt-4 flex justify-between items-center text-sm">
-                        <button
-                          onClick={() => setTrackingOrderId(trackingOrderId === order.id ? null : order.id)}
-                          className="btn-outline !py-1.5 !px-3 !text-xs"
-                        >
-                          {trackingOrderId === order.id ? "Hide Tracking" : "Track Order"}
-                        </button>
-                        <div className="flex gap-6">
-                          <button
-                            onClick={() => handleExportPdf(order)}
-                            className="flex items-center gap-1.5 text-primary hover:underline font-medium"
-                          >
-                            <Download className="size-4" /> Export PDF
-                          </button>
-                          {order.status === "processing" && (
-                            <button
-                              onClick={() => handleCancelOrder(order.id)}
-                              className="text-destructive hover:underline font-medium"
-                            >
-                              Cancel Order
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+                <div>
+                  <h2 className="text-2xl font-serif">Order History</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Track shipments, view detailed invoice receipts, and manage your orders
+                  </p>
                 </div>
-              )}
+              </div>
+
+              <OrderHistoryView
+                orders={orders || []}
+                onOrderCancelled={() => refetchOrders()}
+              />
             </>
           )}
 
           {activeTab === "addresses" && (
             <>
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl">Saved Addresses</h2>
-                {!isAddingAddress && !editingAddress && (
+                <div>
+                  <h2 className="text-2xl font-serif">Saved Addresses</h2>
+                  <p className="text-sm text-muted-foreground mt-0.5">Manage your delivery and billing addresses</p>
+                </div>
+                {!isAddingAddress && (
                   <button
-                    onClick={() => setIsAddingAddress(true)}
-                    className="btn-primary !py-2 !px-4 !text-xs"
+                    onClick={startAddAddress}
+                    className="btn-primary !py-2 !px-4 !text-xs flex items-center gap-1.5"
                   >
+                    <Plus className="size-3.5" />
                     + Add New Address
                   </button>
                 )}
               </div>
 
               {(isAddingAddress || editingAddress) && (
-                <form
-                  key={editingAddress ? `edit-${editingAddress.id}` : "add-new-address"}
-                  onSubmit={handleSaveAddress}
-                  className="border p-6 rounded-lg mb-8 bg-muted/20 space-y-4 max-w-xl"
+                <div
+                  ref={addressFormRef as any}
+                  className="border p-6 md:p-8 rounded-lg mb-8 bg-card shadow-sm max-w-2xl transition-all"
                 >
-                  <h3 className="font-medium text-lg mb-4">
-                    {editingAddress ? "Edit Address" : "Add New Address"}
-                  </h3>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between pb-4 mb-6 border-b">
                     <div>
-                      <Label htmlFor="addr-type">Address Type</Label>
-                      <Input
-                        id="addr-type"
-                        name="type"
-                        defaultValue={editingAddress?.type || "Shipping"}
-                        placeholder="e.g. Shipping / Billing"
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="addr-name">Full Name</Label>
-                      <Input
-                        id="addr-name"
-                        name="full_name"
-                        defaultValue={editingAddress?.full_name || ""}
-                        required
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <Label htmlFor="addr-street">Street Address</Label>
-                      <Input
-                        id="addr-street"
-                        name="street"
-                        defaultValue={editingAddress?.street || ""}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="addr-city">City</Label>
-                      <Input
-                        id="addr-city"
-                        name="city"
-                        defaultValue={editingAddress?.city || ""}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="addr-state">State / County</Label>
-                      <Input
-                        id="addr-state"
-                        name="state"
-                        defaultValue={editingAddress?.state || ""}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="addr-zip">Postcode / Zip</Label>
-                      <Input
-                        id="addr-zip"
-                        name="zip"
-                        defaultValue={editingAddress?.zip || ""}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="addr-country">Country</Label>
-                      <Input
-                        id="addr-country"
-                        name="country"
-                        defaultValue={editingAddress?.country || "United Kingdom"}
-                        required
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <Label htmlFor="addr-phone">Phone Number</Label>
-                      <Input
-                        id="addr-phone"
-                        name="phone"
-                        defaultValue={editingAddress?.phone || ""}
-                        required
-                      />
+                      <h3 className="font-serif font-medium text-xl">
+                        {editingAddress ? `Edit Address` : "Add New Delivery Address"}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {editingAddress ? `Editing details for ${editingAddress.full_name}` : "Enter delivery destination details"}
+                      </p>
                     </div>
                   </div>
-                  <div className="flex gap-3 pt-2">
-                    <button type="submit" className="btn-primary !py-2 !px-5 !text-xs">
-                      {editingAddress ? "Save Changes" : "Add Address"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setEditingAddress(null);
-                        setIsAddingAddress(false);
-                      }}
-                      className="btn-outline !py-2 !px-5 !text-xs"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
+
+                  <AddressForm
+                    key={editingAddress ? `edit-${editingAddress.id}` : "new-address"}
+                    initialData={editingAddress}
+                    onSubmit={handleSaveAddress}
+                    onCancel={() => {
+                      setEditingAddress(null);
+                      setIsAddingAddress(false);
+                    }}
+                    isSubmitting={addressSubmitting}
+                    submitLabel={editingAddress ? "Update Address" : "Save Address"}
+                  />
+                </div>
               )}
 
               {!addresses?.length ? (
-                <p className="text-muted-foreground">You haven't saved any addresses yet.</p>
+                <div className="p-8 border rounded-lg text-center bg-card">
+                  <p className="text-muted-foreground mb-4">You haven't saved any addresses yet.</p>
+                  {!isAddingAddress && (
+                    <button
+                      onClick={startAddAddress}
+                      className="btn-primary !py-2 !px-4 !text-xs"
+                    >
+                      + Add Your First Address
+                    </button>
+                  )}
+                </div>
               ) : (
                 <div className="grid md:grid-cols-2 gap-6">
-                  {addresses.map((address) => (
-                    <div key={address.id} className="border p-6 rounded-lg relative group bg-card">
-                      <span className="absolute top-4 right-4 text-xs uppercase bg-muted px-2 py-1 rounded">
-                        {address.type}
-                      </span>
-                      <div className="font-medium mb-2">{address.full_name}</div>
-                      <div className="text-sm text-muted-foreground space-y-1">
-                        <p>{address.street}</p>
-                        <p>
-                          {address.city}, {address.state} {address.zip}
-                        </p>
-                        <p>{address.country}</p>
-                        <p className="mt-2">Phone: {address.phone}</p>
+                  {addresses.map((address) => {
+                    const isCurrentlyEditing = editingAddress?.id === address.id;
+                    const isDeletingThis = deletingAddressId === address.id;
+                    const isDefaultAddress = Boolean(address.is_default) || localStorage.getItem(`default_addr_${user.id}`) === address.id;
+
+                    return (
+                      <div
+                        key={address.id}
+                        className={`border p-6 rounded-lg relative group bg-card transition-all ${
+                          isCurrentlyEditing
+                            ? "border-primary ring-2 ring-primary/20 shadow-md"
+                            : isDefaultAddress
+                            ? "border-[#6B2C3A]/40 ring-1 ring-[#6B2C3A]/20"
+                            : "hover:border-primary/40"
+                        }`}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="font-medium text-base flex items-center gap-2">
+                            <span>{address.full_name}</span>
+                            {isDefaultAddress && (
+                              <span className="text-[10px] font-semibold tracking-wider uppercase bg-[#6B2C3A] text-white px-2 py-0.5 rounded flex items-center gap-1">
+                                <Star className="size-2.5 fill-current" /> Default
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5">
+                            {isCurrentlyEditing && (
+                              <span className="text-[10px] font-medium uppercase bg-primary text-primary-foreground px-2 py-0.5 rounded">
+                                Editing
+                              </span>
+                            )}
+                            <span className="text-xs uppercase bg-muted px-2 py-1 rounded flex items-center gap-1">
+                              {address.type === "Home" ? <Home className="size-3" /> : address.type === "Work" ? <Briefcase className="size-3" /> : <MapPin className="size-3" />}
+                              {address.type}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="text-sm text-muted-foreground space-y-1">
+                          <p>{address.street}</p>
+                          {address.apartment && (
+                            <p className="text-xs opacity-90">{address.apartment}</p>
+                          )}
+                          <p>
+                            {address.city}, {address.state} {address.zip}
+                          </p>
+                          <p>{address.country}</p>
+                          <p className="mt-2 text-foreground/80 font-mono text-xs">
+                            Phone: {address.phone}
+                          </p>
+                        </div>
+
+                        <div className="mt-4 pt-4 border-t flex justify-between items-center text-sm min-h-[42px]">
+                          {confirmDeleteId === address.id ? (
+                            <div className="flex items-center justify-between w-full bg-destructive/5 border border-destructive/20 p-2 rounded">
+                              <span className="text-xs text-destructive font-medium">Delete address?</span>
+                              <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteAddress(address.id)}
+                                  disabled={isDeletingThis}
+                                  className="text-xs bg-destructive text-destructive-foreground px-2.5 py-1 rounded hover:opacity-90 font-medium flex items-center gap-1"
+                                >
+                                  {isDeletingThis && <Loader2 className="size-3 animate-spin" />}
+                                  {isDeletingThis ? "Deleting..." : "Yes, Delete"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmDeleteId(null)}
+                                  className="text-xs border px-2 py-1 rounded hover:bg-muted font-medium"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <div className="flex items-center gap-4">
+                                <button
+                                  type="button"
+                                  onClick={() => startEditAddress(address)}
+                                  className={`text-sm font-medium flex items-center gap-1.5 transition-colors ${
+                                    isCurrentlyEditing ? "text-primary font-semibold" : "text-primary hover:underline"
+                                  }`}
+                                >
+                                  <Edit2 className="size-3.5" />
+                                  {isCurrentlyEditing ? "Editing..." : "Edit"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmDeleteId(address.id)}
+                                  className="text-destructive hover:underline text-sm font-medium flex items-center gap-1.5"
+                                >
+                                  <Trash2 className="size-3.5" />
+                                  Remove
+                                </button>
+                              </div>
+
+                              {!isDefaultAddress && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleSetDefaultAddress(address.id)}
+                                  className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                                >
+                                  Set as default
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
                       </div>
-                      <div className="mt-4 pt-4 border-t flex justify-between text-sm">
-                        <button
-                          onClick={() => {
-                            setIsAddingAddress(false);
-                            setEditingAddress(address);
-                          }}
-                          className="text-primary hover:underline font-medium"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteAddress(address.id)}
-                          className="text-destructive hover:underline"
-                        >
-                          Remove
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </>
