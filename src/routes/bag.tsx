@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { X } from "lucide-react";
 import { gbp, products } from "@/lib/catalog";
 import { useCart } from "@/lib/cart";
-import { PageHeader } from "@/components/site/Chrome";
+import { PageHeader, useReveal } from "@/components/site/Chrome";
 import { ProductCard } from "@/components/site/ProductCard";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
 
@@ -22,6 +22,7 @@ export const Route = createFileRoute("/bag")({
 });
 
 function Bag() {
+  useReveal();
   const {
     lines,
     total,
@@ -152,8 +153,8 @@ function Bag() {
             {products
               .filter((p) => wishlist.includes(p.id))
               .map((p) => (
-                <div key={p.id} className="[&_.reveal]:opacity-100 [&_.reveal]:transform-none">
-                  <ProductCard p={p} />
+                <div key={p.id}>
+                  <ProductCard p={p} disableReveal />
                 </div>
               ))}
           </div>

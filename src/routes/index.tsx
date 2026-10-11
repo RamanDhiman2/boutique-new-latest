@@ -13,6 +13,68 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import {
+  product1Images,
+  product2Images,
+  product4Images,
+  product6Images,
+  product7Images,
+  product13Images,
+} from "@/lib/productImages";
+
+const INSTAGRAM_URL = "https://www.instagram.com/sohnimutiyaarofficial_?xtok=MWRxbTBram5uZG9udg==";
+const TIKTOK_URL = "https://www.tiktok.com/@sohnimutiyaarofficial_?_r=1&_t=ZN-9ANTri79OHm";
+
+const TikTokIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1.04-.1z" />
+  </svg>
+);
+
+const socialFeedPosts = [
+  {
+    image: product1Images[1],
+    title: "Zardozi Bridal Velvet Lehanga",
+    platform: "instagram" as const,
+    url: INSTAGRAM_URL,
+    altUrl: TIKTOK_URL,
+  },
+  {
+    image: product2Images[0],
+    title: "Raw Silk Heavy Bridal Suit",
+    platform: "tiktok" as const,
+    url: TIKTOK_URL,
+    altUrl: INSTAGRAM_URL,
+  },
+  {
+    image: product4Images[0],
+    title: "Silk Chanderi Navy Blue Suit",
+    platform: "instagram" as const,
+    url: INSTAGRAM_URL,
+    altUrl: TIKTOK_URL,
+  },
+  {
+    image: product6Images[0],
+    title: "Olive Green Raw Silk Zardozi Suit",
+    platform: "tiktok" as const,
+    url: TIKTOK_URL,
+    altUrl: INSTAGRAM_URL,
+  },
+  {
+    image: product7Images[0],
+    title: "Velvet Peacock Blue Kurti & Palazzo",
+    platform: "instagram" as const,
+    url: INSTAGRAM_URL,
+    altUrl: TIKTOK_URL,
+  },
+  {
+    image: product13Images[0],
+    title: "Royal Ivory & Gold Raw Silk Suit",
+    platform: "tiktok" as const,
+    url: TIKTOK_URL,
+    altUrl: INSTAGRAM_URL,
+  },
+];
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -74,10 +136,10 @@ function Home() {
       <section className="relative h-[88vh] min-h-[560px] overflow-hidden">
         <img
           src={heroImage}
-          alt="Burgundy embroidered suit salwar"
+          alt="Sohni Mutiyaar Bespoke Luxury Indian Bridal Wear"
           width={1536}
           height={1024}
-          className="absolute inset-0 size-full object-cover object-[60%_center] scale-105 animate-[rise_2s_ease_both]"
+          className="absolute inset-0 size-full object-cover object-[center_20%] lg:object-[center_25%] scale-105 animate-[rise_2s_ease_both]"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-ink/75 via-ink/30 to-transparent" />
         <div className="relative mx-auto max-w-[1500px] h-full px-5 lg:px-10 flex items-center">
@@ -242,26 +304,102 @@ function Home() {
       </Section>
 
       {/* Social */}
-      <Section eyebrow="@sohnimutiyaarbycc" title="Follow along on Instagram & TikTok">
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-          {categories.slice(1).map((c) => (
+      <Section
+        eyebrow="@sohnimutiyaarbycc"
+        title="Follow along on Instagram & TikTok"
+        text="Discover daily styling inspirations, behind-the-scenes bespoke tailoring, and latest design reveals."
+        action={
+          <div className="flex flex-wrap items-center gap-2.5">
             <a
-              key={c.slug}
-              href="https://www.instagram.com/sohnimutiyaarofficial_?xtok=MWRxbTBram5uZG9udg=="
+              href={INSTAGRAM_URL}
               target="_blank"
               rel="noreferrer"
-              className="group relative aspect-square overflow-hidden reveal"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-border/80 bg-background hover:bg-[#E1306C]/10 hover:border-[#E1306C]/50 hover:text-[#E1306C] text-xs font-semibold tracking-wider transition-all shadow-xs cursor-pointer"
+            >
+              <Instagram className="size-4 text-[#E1306C]" />
+              <span>Instagram</span>
+            </a>
+            <a
+              href={TIKTOK_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-border/80 bg-background hover:bg-foreground/10 hover:border-foreground/50 text-xs font-semibold tracking-wider transition-all shadow-xs cursor-pointer"
+            >
+              <TikTokIcon className="size-4" />
+              <span>TikTok</span>
+            </a>
+          </div>
+        }
+      >
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+          {socialFeedPosts.map((post, i) => (
+            <div
+              key={i}
+              className="group relative aspect-square overflow-hidden rounded-xs border border-border/60 reveal bg-muted/20"
             >
               <img
-                src={c.image}
-                alt=""
+                src={post.image}
+                alt={post.title}
                 loading="lazy"
-                className="size-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                className="size-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
-              <div className="absolute inset-0 grid place-items-center bg-ink/0 group-hover:bg-ink/40 transition-colors">
-                <Instagram className="size-6 text-ink-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+
+              {/* Corner Platform Badge */}
+              <div className="absolute top-2.5 right-2.5 z-10">
+                <span
+                  className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.62rem] font-medium tracking-wide shadow-xs backdrop-blur-md ${
+                    post.platform === "instagram"
+                      ? "bg-black/70 text-white border border-white/10"
+                      : "bg-black/85 text-white border border-white/20"
+                  }`}
+                >
+                  {post.platform === "instagram" ? (
+                    <Instagram className="size-3 text-[#E1306C]" />
+                  ) : (
+                    <TikTokIcon className="size-3 text-white" />
+                  )}
+                  <span className="capitalize">{post.platform}</span>
+                </span>
               </div>
-            </a>
+
+              {/* Hover overlay with dual links */}
+              <div className="absolute inset-0 z-20 flex flex-col justify-end p-3 bg-gradient-to-t from-ink/90 via-ink/40 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+                <p className="text-[0.68rem] text-ink-foreground font-medium line-clamp-1 mb-2">
+                  {post.title}
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <a
+                    href={post.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 inline-flex items-center justify-center gap-1 py-1.5 px-2 bg-white/95 hover:bg-white text-ink text-[0.62rem] font-semibold tracking-wider uppercase rounded-xs transition-colors"
+                  >
+                    {post.platform === "instagram" ? (
+                      <>
+                        <Instagram className="size-3 text-[#E1306C]" /> Open
+                      </>
+                    ) : (
+                      <>
+                        <TikTokIcon className="size-3 text-ink" /> Watch
+                      </>
+                    )}
+                  </a>
+                  <a
+                    href={post.altUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={post.platform === "instagram" ? "View on TikTok" : "View on Instagram"}
+                    className="size-7 inline-flex items-center justify-center bg-black/60 hover:bg-black/90 text-white rounded-xs transition-colors border border-white/20"
+                  >
+                    {post.platform === "instagram" ? (
+                      <TikTokIcon className="size-3 text-white" />
+                    ) : (
+                      <Instagram className="size-3 text-white" />
+                    )}
+                  </a>
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       </Section>

@@ -181,3 +181,35 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 REVOKE EXECUTE ON FUNCTION public.cancel_order_secure(UUID) FROM public;
 GRANT EXECUTE ON FUNCTION public.cancel_order_secure(UUID) TO authenticated;
+
+-- 5. PRODUCT REVIEWS TABLE (Customer Reviews & Ratings)
+CREATE TABLE IF NOT EXISTS public.product_reviews (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id TEXT NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  author_name TEXT NOT NULL,
+  rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  title TEXT,
+  comment TEXT NOT NULL,
+  verified_purchase BOOLEAN DEFAULT false,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_product_reviews_product_id ON public.product_reviews(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_reviews_created_at ON public.product_reviews(created_at DESC);
+
+ALTER TABLE public.product_reviews ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public can view product reviews" ON public.product_reviews;
+CREATE POLICY "Public can view product reviews"
+  ON public.product_reviews FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Anyone can insert product reviews" ON public.product_reviews;
+CREATE POLICY "Anyone can insert product reviews"
+  ON public.product_reviews FOR INSERT WITH CHECK (
+    rating >= 1 AND rating <= 5
+    AND length(trim(author_name)) >= 2
+    AND length(trim(comment)) >= 5
+    AND (user_id IS NULL OR user_id = auth.uid())
+  );

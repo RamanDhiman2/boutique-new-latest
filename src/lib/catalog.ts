@@ -1,13 +1,28 @@
-import hero from "@/assets/hero.jpg";
-import bridal from "@/assets/bridal.jpg";
-import occasion from "@/assets/occasion.jpg";
-import daily from "@/assets/daily.jpg";
-import thread from "@/assets/thread.jpg";
-import mirror from "@/assets/mirror.jpg";
-import aari from "@/assets/aari.jpg";
-import hand from "@/assets/hand.jpg";
+import {
+  product1Images,
+  product2Images,
+  product3Images,
+  product4Images,
+  product5Images,
+  product6Images,
+  product7Images,
+  product8Images,
+  product9Images,
+  product10Images,
+  product11Images,
+  product12Images,
+  product13Images,
+  featuredHeroImage,
+  featuredBridalBanner,
+  featuredOccasionBanner,
+  featuredDailyBanner,
+  featuredThreadBanner,
+  featuredMirrorBanner,
+  featuredAariBanner,
+  featuredHandBanner,
+} from "./productImages";
 
-export const heroImage = hero;
+export const heroImage = featuredHeroImage;
 
 export const CONTACT_EMAIL = "Charminngchic@gmail.com";
 export const WHATSAPP_NUMBER = "447393070421";
@@ -30,7 +45,7 @@ export const categories: Category[] = [
     tagline: "For your most unforgettable moments",
     description:
       "Exquisite bridal outfits with rich embroidery, heirloom detailing and made-to-measure tailoring.",
-    image: bridal,
+    image: featuredBridalBanner,
   },
   {
     slug: "shop-by-occasion",
@@ -38,7 +53,7 @@ export const categories: Category[] = [
     tagline: "Weddings, festivals & celebrations",
     description:
       "Mehndi, sangeet, Eid, Diwali, parties and receptions — dressed beautifully for every celebration.",
-    image: occasion,
+    image: featuredOccasionBanner,
   },
   {
     slug: "daily-wear",
@@ -46,7 +61,7 @@ export const categories: Category[] = [
     tagline: "Everyday elegance",
     description:
       "Comfortable, graceful suit salwars and kurtas designed for effortless everyday style.",
-    image: daily,
+    image: featuredDailyBanner,
   },
   {
     slug: "thread-work",
@@ -54,28 +69,28 @@ export const categories: Category[] = [
     tagline: "Colour, stitch by stitch",
     description:
       "Intricate thread embroidery with carefully selected colours and traditional craftsmanship.",
-    image: thread,
+    image: featuredThreadBanner,
   },
   {
     slug: "mirror-work",
     name: "Mirror Work",
     tagline: "Light-catching heritage",
     description: "Hand-set mirrors framed in fine embroidery — festive, luminous and timeless.",
-    image: mirror,
+    image: featuredMirrorBanner,
   },
   {
     slug: "aari-work",
     name: "Aari Work",
     tagline: "Fine chain-stitch artistry",
     description: "Delicate Aari embroidery with beads, sequins and precise hand-guided detail.",
-    image: aari,
+    image: featuredAariBanner,
   },
   {
     slug: "hand-work",
     name: "Hand Work",
     tagline: "Made slowly, by hand",
     description: "Pearls, zari and hand embroidery — every piece carries the touch of the artisan.",
-    image: hand,
+    image: featuredHandBanner,
   },
 ];
 
@@ -92,167 +107,164 @@ export type Product = {
 };
 
 const S = ["XS", "S", "M", "L", "XL", "Custom"];
-const img = (c: string) => categories.find((x) => x.slug === c)!.image;
+const S_BRIDAL = ["Custom", "S", "M", "L", "XL"];
 
 export const products: Product[] = [
   {
-    id: "noor-bridal-lehenga",
-    name: "Noor Bridal Lehenga",
-    price: 1450,
-    colour: "Crimson & Gold",
-    category: "bridal",
-    images: [bridal, aari],
-    sizes: ["Custom"],
-    customisable: true,
-    description:
-      "A heirloom-worthy bridal lehenga with dense zardozi and Aari detailing, finished with a sheer embroidered dupatta.",
-  },
-  {
-    id: "rani-bridal-suit",
-    name: "Rani Bridal Suit",
-    price: 890,
-    colour: "Wine",
-    category: "bridal",
-    images: [hero, mirror],
-    sizes: S,
-    customisable: true,
-    description:
-      "A regal bridal suit salwar in deep wine with gold handwork and a scalloped net dupatta.",
-  },
-  {
-    id: "zoya-anarkali",
-    name: "Zoya Anarkali",
-    price: 340,
-    colour: "Plum",
+    id: "elegant-maroon-suit",
+    name: "Elegant Maroon Suit",
+    price: 65,
+    colour: "Maroon",
     category: "shop-by-occasion",
-    images: [occasion, thread],
+    images: product1Images,
     sizes: S,
     customisable: true,
     description:
-      "A flowing silk anarkali with gold-embroidered yoke and border — made for festive evenings.",
+      "An elegant maroon suit crafted from beautiful viscose organza fabric, featuring intricate machine work and a matching viscose organza dupatta. Perfect for adding grace and elegance to your special occasions.\n\nProduct Details:\n• Suit Fabric: Viscose Organza\n• Dupatta Fabric: Viscose Organza\n• Work: Beautiful Machine Embroidery\n• Finishing: Neat & Fine Workmanship",
   },
   {
-    id: "meher-occasion-suit",
-    name: "Meher Occasion Suit",
-    price: 295,
-    colour: "Burgundy",
-    category: "shop-by-occasion",
-    images: [hero, aari],
+    id: "elegant-purple-georgette-suit",
+    name: "Elegant Purple Viscose Georgette Suit",
+    price: 63,
+    colour: "Purple",
+    category: "aari-work",
+    images: product2Images,
     sizes: S,
     customisable: true,
     description:
-      "A straight-cut suit with all-over buti work and a richly bordered organza dupatta.",
+      "A beautifully designed purple suit crafted from soft viscose georgette, paired with a comfortable salwar and a pure tabby-lines dupatta. The suit features elegant Ari work, while the dupatta is finished with beautiful lace on all four sides—perfect for festive occasions and special events.\n\nProduct Details:\n• Suit & Salwar Fabric: Viscose Georgette\n• Dupatta Fabric: Pure Tabby Lines\n• Work: Elegant Ari Work on the Suit\n• Dupatta Detail: Lace on all four sides\n• Finishing: Neat and fine workmanship",
   },
   {
-    id: "gulab-cotton-kurta",
-    name: "Gulab Cotton Kurta Set",
-    price: 95,
-    colour: "Blush Pink",
+    id: "elegant-yellow-cream-suit",
+    name: "Elegant Yellow & Cream Suit",
+    price: 65,
+    colour: "Yellow & Cream",
+    category: "thread-work",
+    images: product3Images,
+    sizes: S,
+    customisable: true,
+    description:
+      "A beautifully designed suit featuring a yellow georgette shirt, paired with a cream viscose organza salwar and dupatta. The outfit is enhanced with elegant golden seed bead and thread machine work, along with lace detailing on all four sides of the dupatta.\n\nProduct Details:\n• Shirt Fabric: Georgette\n• Salwar Fabric: Viscose Organza\n• Dupatta Fabric: Viscose Organza\n• Colours: Yellow shirt with cream salwar and dupatta\n• Work: Golden seed bead and thread machine work\n• Dupatta Detail: Lace on all four sides\n• Finishing: Neat and fine workmanship",
+  },
+  {
+    id: "elegant-firozi-heavy-suit",
+    name: "Elegant Firozi Heavy Suit",
+    price: 150,
+    colour: "Firozi",
+    category: "hand-work",
+    images: product4Images,
+    sizes: S_BRIDAL,
+    customisable: true,
+    description:
+      "A beautifully crafted heavy suit featuring a satin organza shirt, paired with a viscose organza dupatta. The outfit is enhanced with detailed handwork and elegant patchwork, making it perfect for weddings and other special occasions. The dupatta is finished with beautiful handwork on all four sides.\n\nProduct Details:\n• Shirt Fabric: Satin Organza\n• Dupatta Fabric: Viscose Organza\n• Colour: Firozi\n• Work: Full Handwork and Patchwork\n• Dupatta Detail: Handwork on all four sides\n• Style: Heavy and elegant occasion wear\n• Finishing: Neat and fine workmanship",
+  },
+  {
+    id: "crepe-mix-match-printed-suit",
+    name: "Crepe Mix & Match Printed Suit",
+    price: 80,
+    colour: "Multi-Colour Print",
     category: "daily-wear",
-    images: [daily, hand],
+    images: product5Images,
     sizes: S,
-    customisable: false,
-    description: "A breathable cotton kurta and trouser set with tonal neckline embroidery.",
+    customisable: true,
+    description:
+      "A stylish crepe fabric suit featuring beautiful mix-and-match prints, designed to create a unique and elegant look. The dupatta is made from soft viscose chiffon and finished with delicate lace on all four sides, adding a graceful touch to the outfit.\n\nProduct Details:\n• Suit Fabric: Crepe\n• Design: Mix-and-match prints\n• Dupatta Fabric: Viscose Chiffon\n• Dupatta Detail: Lace on all four sides\n• Style: Elegant and versatile\n• Finishing: Neat and fine workmanship",
   },
   {
-    id: "saba-daily-suit",
-    name: "Saba Daily Suit",
+    id: "royal-navy-blue-green-suit",
+    name: "Royal Navy Blue & Green Suit",
     price: 120,
-    colour: "Ivory",
-    category: "daily-wear",
-    images: [daily, aari],
-    sizes: S,
-    customisable: true,
-    description: "Soft, easy and refined — an everyday suit salwar with delicate thread detailing.",
-  },
-  {
-    id: "phulkari-dupatta-suit",
-    name: "Phulkari Thread Suit",
-    price: 260,
-    colour: "Maroon Multi",
-    category: "thread-work",
-    images: [thread, hero],
-    sizes: S,
-    customisable: true,
-    description: "Vibrant floral thread embroidery on rich maroon, inspired by Punjabi phulkari.",
-  },
-  {
-    id: "kesar-thread-kurta",
-    name: "Kesar Thread Kurta",
-    price: 180,
-    colour: "Saffron",
-    category: "thread-work",
-    images: [thread, daily],
-    sizes: S,
-    customisable: true,
-    description: "A statement kurta with dense multi-colour thread work at the yoke and sleeves.",
-  },
-  {
-    id: "sheesha-suit",
-    name: "Sheesha Mirror Suit",
-    price: 310,
-    colour: "Plum & Gold",
-    category: "mirror-work",
-    images: [mirror, occasion],
+    colour: "Royal Navy Blue & Green",
+    category: "shop-by-occasion",
+    images: product6Images,
     sizes: S,
     customisable: true,
     description:
-      "Hand-set mirrors encircled by pearl-white embroidery for a luminous festive finish.",
+      "A stunning royal navy blue and green suit featuring beautiful handwork embroidery, paired with a stylish tie-and-dye dupatta. The suit and salwar are made from satin organza fabric, creating an elegant and luxurious look for special occasions.\n\nProduct Details:\n• Suit Fabric: Satin Organza\n• Salwar Fabric: Satin Organza\n• Dupatta: Tie-and-Dye Organza\n• Work: Handwork Embroidery\n• Colours: Royal Navy Blue & Green\n• Finishing: Neat and fine workmanship",
   },
   {
-    id: "chandni-mirror-dupatta",
-    name: "Chandni Mirror Set",
-    price: 275,
-    colour: "Wine",
-    category: "mirror-work",
-    images: [mirror, hero],
-    sizes: S,
-    customisable: true,
-    description: "A mirror-work set that catches every light, with a matching embellished dupatta.",
-  },
-  {
-    id: "moti-aari-suit",
-    name: "Moti Aari Suit",
-    price: 360,
-    colour: "Ivory & Champagne",
-    category: "aari-work",
-    images: [aari, daily],
-    sizes: S,
-    customisable: true,
-    description: "Fine Aari chain-stitch florals with pearl and sequin clusters on ivory silk.",
-  },
-  {
-    id: "heer-aari-anarkali",
-    name: "Heer Aari Anarkali",
-    price: 420,
-    colour: "Champagne",
-    category: "aari-work",
-    images: [aari, occasion],
-    sizes: S,
-    customisable: true,
-    description: "A graceful anarkali with an Aari-embroidered bodice and scalloped hem.",
-  },
-  {
-    id: "gulnar-handwork-suit",
-    name: "Gulnar Handwork Suit",
-    price: 390,
-    colour: "Soft Blush",
+    id: "baby-pink-mehroon-touch-suit",
+    name: "Baby Pink Suit with Mehroon Touch",
+    price: 170,
+    colour: "Baby Pink with Mehroon Touch",
     category: "hand-work",
-    images: [hand, daily],
-    sizes: S,
+    images: product7Images,
+    sizes: S_BRIDAL,
     customisable: true,
-    description: "Pearls, zari and hand embroidery on blush silk — crafted slowly over many days.",
+    description:
+      "A beautiful baby pink satin suit featuring delicate hand embroidery with elegant mehroon accents and white pearl detailing. The all-over pink fabric creates a soft, graceful, and luxurious look, perfect for special occasions.\n\nProduct Details:\n• Suit Fabric: Satin\n• Colour: Baby Pink with Mehroon Touch\n• Work: Hand Embroidery\n• Detailing: White Pearl Work\n• Design: All-over Embroidery\n• Finishing: Neat and fine workmanship",
   },
   {
-    id: "inaya-hand-embroidered",
-    name: "Inaya Hand-Embroidered Set",
-    price: 340,
-    colour: "Rose",
-    category: "hand-work",
-    images: [hand, aari],
+    id: "dark-purple-heavy-handwork-suit",
+    name: "Dark Purple Suit with Heavy Handwork",
+    price: 120,
+    colour: "Dark Purple",
+    category: "shop-by-occasion",
+    images: product8Images,
     sizes: S,
     customisable: true,
-    description: "Hand-embroidered florals with delicate beading for an heirloom finish.",
+    description:
+      "A stunning dark purple suit featuring exquisite heavy handwork on the suit, dupatta, and salwar. Designed with rich detailing and elegant craftsmanship, this outfit is perfect for weddings, festive celebrations, and special occasions.\n\nProduct Details:\n• Colour: Dark Purple (Available in 20 beautiful shades)\n• Work: Heavy Handwork\n• Work Placement: Suit, Dupatta, and Salwar\n• Finishing: Neat and fine workmanship",
+  },
+  {
+    id: "bottle-green-heavy-handwork-suit",
+    name: "Bottle Green Suit with Heavy Handwork",
+    price: 140,
+    colour: "Bottle Green",
+    category: "hand-work",
+    images: product9Images,
+    sizes: S,
+    customisable: true,
+    description:
+      "A luxurious bottle green suit featuring exquisite heavy hand embroidery, crafted with elegant detailing for a rich and graceful look. Perfect for weddings, festive celebrations, and special occasions.\n\nProduct Details:\n• Colour: Bottle Green\n• Suit Fabric: Pure Kamal Crepe\n• Salwar Fabric: Pure Kamal Crepe\n• Dupatta Fabric: Chinon\n• Work: Heavy Hand Embroidery\n• Finishing: Neat and fine workmanship",
+  },
+  {
+    id: "coffee-brown-cream-salwar-suit",
+    name: "Coffee Brown Suit with Cream Salwar",
+    price: 60,
+    colour: "Coffee Brown & Cream",
+    category: "daily-wear",
+    images: product10Images,
+    sizes: S,
+    customisable: true,
+    description:
+      "A stylish coffee brown suit paired with a cream salwar and a beautiful tie-dye dupatta. Designed with a comfortable fit and neat finishing, this outfit is perfect for casual outings, gatherings, and everyday elegance.\n\nProduct Details:\n• Suit Colour: Coffee Brown\n• Salwar Colour: Cream\n• Dupatta: Tie-Dye Dupatta\n• Style: Comfortable and Elegant\n• Finishing: Neat and Fine Workmanship",
+  },
+  {
+    id: "all-over-black-heavy-handwork-suit",
+    name: "All-Over Black Suit with Heavy Handwork",
+    price: 199,
+    colour: "Black",
+    category: "shop-by-occasion",
+    images: product11Images,
+    sizes: S,
+    customisable: true,
+    description:
+      "An elegant all-over black suit crafted from premium crepe fabric and beautifully enhanced with heavy handwork. Designed with attention to detail and neat finishing, this outfit is perfect for weddings, parties, festive occasions, and special events.\n\nProduct Details:\n• Suit Colour: Black\n• Fabric: Premium Crepe\n• Work: Heavy Handwork\n• Style: Elegant and Luxurious\n• Finishing: Neat and Fine Workmanship",
+  },
+  {
+    id: "dark-green-bridal-heavy-handwork-suit",
+    name: "Dark Green Bridal Suit with Heavy Handwork",
+    price: 230,
+    colour: "Dark Green",
+    category: "bridal",
+    images: product12Images,
+    sizes: S_BRIDAL,
+    customisable: true,
+    description:
+      "A stunning dark green suit featuring luxurious heavy handwork, specially designed for Jaago nights, bridal wear, weddings, and other special occasions. Its elegant detailing and neat finishing create a rich and graceful look.\n\nProduct Details:\n• Suit Colour: Dark Green\n• Work: Heavy Handwork\n• Style: Bridal and Festive Wear\n• Perfect For: Jaago Night, Weddings, and Special Events\n• Finishing: Neat and Fine Workmanship",
+  },
+  {
+    id: "firozi-banarsi-heavy-golden-suit",
+    name: "Firozi Banarsi Suit with Heavy Golden Work",
+    price: 199,
+    colour: "Firozi",
+    category: "bridal",
+    images: product13Images,
+    sizes: S_BRIDAL,
+    customisable: true,
+    description:
+      "A beautiful firozi suit crafted from luxurious Banarsi fabric, featuring elegant heavy golden work. Its rich design and neat finishing make it perfect for bridal wear, weddings, Jaago nights, and special occasions.\n\nProduct Details:\n• Suit Colour: Firozi\n• Fabric: Premium Banarsi\n• Work: Heavy Golden Work\n• Style: Bridal and Festive Wear\n• Perfect For: Weddings, Jaago Nights, and Special Events\n• Finishing: Neat and Fine Workmanship",
   },
 ];
 

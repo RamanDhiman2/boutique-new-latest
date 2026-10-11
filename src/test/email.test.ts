@@ -17,15 +17,15 @@ describe("EmailJS Service Integration", () => {
   });
 
   it("identifies unconfigured state when environment variables are missing", () => {
-    delete process.env.VITE_EMAILJS_SERVICE_ID;
-    delete process.env.VITE_EMAILJS_TEMPLATE_ID;
-    delete process.env.VITE_EMAILJS_PUBLIC_KEY;
+    delete process.env["VITE_EMAILJS_SERVICE_ID"];
+    delete process.env["VITE_EMAILJS_TEMPLATE_ID"];
+    delete process.env["VITE_EMAILJS_PUBLIC_KEY"];
 
     expect(isEmailJSConfigured()).toBe(false);
   });
 
   it("throws a descriptive error when required env vars are missing upon send", async () => {
-    delete process.env.VITE_EMAILJS_SERVICE_ID;
+    delete process.env["VITE_EMAILJS_SERVICE_ID"];
 
     await expect(
       sendContactEmail({

@@ -4,24 +4,24 @@ import { toast } from "sonner";
 import { gbp, type Product } from "@/lib/catalog";
 import { useCart } from "@/lib/cart";
 
-export function ProductCard({ p }: { p: Product }) {
+export function ProductCard({ p, disableReveal }: { p: Product; disableReveal?: boolean }) {
   const { toggleWish, wishlist, add } = useCart();
   const wished = wishlist.includes(p.id);
   return (
-    <div className="group reveal">
+    <div className={`group ${disableReveal ? "" : "reveal"}`}>
       <div className="relative aspect-[3/4] overflow-hidden bg-muted">
         <Link to="/product/$id" params={{ id: p.id }}>
           <img
             src={p.images[0]}
             alt={p.name}
             loading="lazy"
-            className="absolute inset-0 size-full object-cover transition-all duration-[1.2s] group-hover:scale-105 group-hover:opacity-0"
+            className="absolute inset-0 size-full object-cover object-[center_20%] transition-all duration-[1.2s] group-hover:scale-105 group-hover:opacity-0"
           />
           <img
             src={p.images[1] ?? p.images[0]}
             alt=""
             loading="lazy"
-            className="absolute inset-0 size-full object-cover opacity-0 transition-all duration-[1.2s] group-hover:opacity-100 scale-105 group-hover:scale-100"
+            className="absolute inset-0 size-full object-cover object-[center_20%] opacity-0 transition-all duration-[1.2s] group-hover:opacity-100 scale-105 group-hover:scale-100"
           />
         </Link>
         {p.customisable && (
@@ -30,7 +30,11 @@ export function ProductCard({ p }: { p: Product }) {
           </span>
         )}
         <button
-          onClick={() => toggleWish(p.id)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleWish(p.id);
+          }}
           aria-label="Wishlist"
           className="absolute top-3 right-3 size-9 grid place-items-center rounded-full bg-background/90"
         >
@@ -45,7 +49,9 @@ export function ProductCard({ p }: { p: Product }) {
             Quick view
           </Link>
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               add(p.id, p.sizes[0] ?? "Custom");
               toast.success(`${p.name} added to your bag`);
             }}

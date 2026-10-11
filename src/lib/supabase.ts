@@ -39,8 +39,22 @@ export interface OrderRecord {
   address_id?: string;
   total_amount: number;
   status: string;
+  payment_status?: string;
+  payment_provider_id?: string;
   created_at: string;
   order_items: OrderItemRecord[];
+}
+
+export interface ProductReviewRecord {
+  id: string;
+  product_id: string;
+  user_id?: string | null;
+  author_name: string;
+  rating: number;
+  title?: string;
+  comment: string;
+  verified_purchase?: boolean;
+  created_at: string;
 }
 
 export interface AuthErrorLike {
@@ -279,7 +293,62 @@ function createMockSupabase() {
                   return { data: filtered as unknown as Record<string, unknown>[], error: null };
                 }
 
-                const genericList = getStorage<Record<string, unknown>[]>(table, []);
+                let genericList = getStorage<Record<string, unknown>[]>(table, []);
+                if (table === "product_reviews" && genericList.length === 0) {
+                  genericList = [
+                    {
+                      id: "rev_1",
+                      product_id: "elegant-maroon-suit",
+                      author_name: "Harleen Kaur",
+                      rating: 5,
+                      title: "Pure Royal Craftsmanship",
+                      comment: "The velvet is incredibly rich and the zardozi embroidery is heavy and authentic. The bespoke fit was made to measure perfectly. Everyone at my family wedding complimented it!",
+                      verified_purchase: true,
+                      created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+                    },
+                    {
+                      id: "rev_2",
+                      product_id: "elegant-maroon-suit",
+                      author_name: "Priya Sharma",
+                      rating: 5,
+                      title: "Stunning Bridal Ensemble",
+                      comment: "Wore this for my cousin's wedding and received endless compliments. The flare and dupatta finish are top tier.",
+                      verified_purchase: true,
+                      created_at: new Date(Date.now() - 12 * 86400000).toISOString(),
+                    },
+                    {
+                      id: "rev_3",
+                      product_id: "elegant-purple-georgette-suit",
+                      author_name: "Simran Gill",
+                      rating: 5,
+                      title: "Exquisite Aari embroidery",
+                      comment: "The shade of purple is so regal. Lightweight georgette yet the work feels premium and luxury.",
+                      verified_purchase: true,
+                      created_at: new Date(Date.now() - 8 * 86400000).toISOString(),
+                    },
+                    {
+                      id: "rev_4",
+                      product_id: "royal-navy-blue-green-suit",
+                      author_name: "Jasleen B.",
+                      rating: 5,
+                      title: "Colour combination is mesmerising",
+                      comment: "Navy and green silk blend is stunning in person. Delivery to London was fast and beautifully packaged.",
+                      verified_purchase: true,
+                      created_at: new Date(Date.now() - 15 * 86400000).toISOString(),
+                    },
+                    {
+                      id: "rev_5",
+                      product_id: "all-over-black-heavy-handwork-suit",
+                      author_name: "Amanpreet K.",
+                      rating: 5,
+                      title: "Showstopper black velvet suit",
+                      comment: "The black velvet with heavy hand embroidery is sensational. Worth every single penny.",
+                      verified_purchase: true,
+                      created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+                    },
+                  ];
+                  setStorage("product_reviews", genericList);
+                }
                 const filtered = genericList.filter((r) => r[col] === val);
                 return { data: filtered, error: null };
               };
@@ -434,6 +503,11 @@ function createMockSupabase() {
       }
 
       return { data: null, error: null };
+    },
+    functions: {
+      async invoke(_funcName: string, _options?: { body?: any }) {
+        return { data: null, error: new Error("Supabase Edge Functions are not available in mock mode") };
+      },
     },
   };
 }

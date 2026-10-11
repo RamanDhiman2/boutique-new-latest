@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
-import { Download } from "lucide-react";
+import { Download, Package, CheckCircle, Truck, XCircle } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -22,6 +22,7 @@ function ProfilePage() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
   const [editingAddress, setEditingAddress] = useState<AddressRecord | null>(null);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [savedTailorSlip, setSavedTailorSlip] = useState<{
@@ -101,9 +102,10 @@ function ProfilePage() {
 
   const handleExportPdf = (order: OrderRecord) => {
     const doc = new jsPDF();
-    doc.text(`Order Invoice #${order.id.slice(0, 8)}`, 14, 20);
-    doc.text(`Date: ${new Date(order.created_at).toLocaleDateString()}`, 14, 30);
-    doc.text(`Status: ${order.status.toUpperCase()}`, 14, 40);
+    doc.text(`Order Invoice #${order.id.slice(0, 8)}`, 14, 18);
+    doc.text(`Date: ${new Date(order.created_at).toLocaleDateString()}`, 14, 26);
+    doc.text(`Payment: ${(order.payment_status || "unpaid").toUpperCase()}`, 14, 34);
+    doc.text(`Fulfillment: ${order.status.toUpperCase()}`, 14, 42);
     
     autoTable(doc, {
       startY: 50,
@@ -194,6 +196,63 @@ function ProfilePage() {
     } else {
       toast.success("Profile updated successfully");
     }
+  };
+
+  const renderTimeline = (status: string) => {
+    const s = status.toLowerCase();
+    const isCancelled = s === "cancelled";
+    
+    const steps = [
+      { id: "processing", label: "Processing", icon: Package },
+      { id: "shipped", label: "Shipped", icon: Truck },
+      { id: "delivered", label: "Delivered", icon: CheckCircle },
+    ];
+
+    if (isCancelled) {
+      return (
+        <div className="flex items-center gap-4 text-destructive p-4 border border-destructive/20 rounded-md bg-destructive/5 mt-6">
+          <XCircle className="size-6" />
+          <div>
+            <div className="font-semibold uppercase tracking-wider text-sm">Order Cancelled</div>
+            <div className="text-sm opacity-80 mt-1">This order has been cancelled and will not be fulfilled.</div>
+          </div>
+        </div>
+      );
+    }
+
+    let currentStepIdx = 0;
+    if (s === "shipped") currentStepIdx = 1;
+    if (s === "delivered") currentStepIdx = 2;
+
+    return (
+      <div className="mt-4 mb-2 relative">
+        <div className="absolute top-5 left-0 w-full h-0.5 bg-border -z-10 hidden sm:block"></div>
+        <div className="flex flex-col sm:flex-row justify-between gap-6 sm:gap-0">
+          {steps.map((step, idx) => {
+            const isCompleted = idx <= currentStepIdx;
+            const isCurrent = idx === currentStepIdx;
+            const Icon = step.icon;
+            return (
+              <div key={step.id} className="flex sm:flex-col items-center gap-4 sm:gap-3 text-center bg-card">
+                <div 
+                  className={`size-10 rounded-full flex items-center justify-center border-2 shrink-0 ${
+                    isCompleted ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted text-muted-foreground"
+                  }`}
+                >
+                  <Icon className="size-5" />
+                </div>
+                <div>
+                  <div className={`font-medium text-sm ${isCompleted ? "text-foreground" : "text-muted-foreground"}`}>
+                    {step.label}
+                  </div>
+                  {isCurrent && <div className="text-xs text-primary mt-1">Current Status</div>}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -338,17 +397,38 @@ function ProfilePage() {
                     <div key={order.id} className="border p-6 rounded-lg">
                       <div className="flex justify-between items-center mb-4 pb-4 border-b">
                         <div>
-                          <div className="font-medium">Order #{order.id.slice(0, 8)}</div>
+                          <div className="font-medium">Order #{order.id.split("-")[0]}</div>
                           <div className="text-sm text-muted-foreground" suppressHydrationWarning>
                             {new Date(order.created_at).toLocaleDateString()}
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right flex flex-col items-end gap-1">
                           <div className="font-medium">£{order.total_amount}</div>
-                          <div
-                            className={`text-sm uppercase ${order.status === "cancelled" ? "text-destructive" : "text-primary"}`}
-                          >
-                            {order.status}
+                          <div className="flex items-center gap-2">
+                            {order.payment_status === "captured" ? (
+                              <span className="text-[10px] uppercase font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-xs tracking-wider">
+                                Paid
+                              </span>
+                            ) : order.payment_status === "failed" ? (
+                              <span className="text-[10px] uppercase font-semibold bg-red-50 text-red-700 border border-red-200 px-2 py-0.5 rounded-xs tracking-wider">
+                                Payment Failed
+                              </span>
+                            ) : order.payment_status === "refunded" ? (
+                              <span className="text-[10px] uppercase font-semibold bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-xs tracking-wider">
+                                Refunded
+                              </span>
+                            ) : (
+                              <span className="text-[10px] uppercase font-semibold bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-xs tracking-wider">
+                                Payment Pending
+                              </span>
+                            )}
+                            <span
+                              className={`text-xs uppercase font-medium tracking-wider ${
+                                order.status === "cancelled" ? "text-destructive" : "text-muted-foreground"
+                              }`}
+                            >
+                              {order.status === "processing" ? "In Production" : order.status}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -362,21 +442,36 @@ function ProfilePage() {
                           </div>
                         ))}
                       </div>
-                      <div className="border-t pt-4 flex justify-end items-center gap-6 text-sm">
+
+                      {trackingOrderId === order.id && (
+                        <div className="mb-6 pt-2 pb-4 border-b">
+                          {renderTimeline(order.status)}
+                        </div>
+                      )}
+
+                      <div className="border-t pt-4 flex justify-between items-center text-sm">
                         <button
-                          onClick={() => handleExportPdf(order)}
-                          className="flex items-center gap-1.5 text-primary hover:underline font-medium"
+                          onClick={() => setTrackingOrderId(trackingOrderId === order.id ? null : order.id)}
+                          className="btn-outline !py-1.5 !px-3 !text-xs"
                         >
-                          <Download className="size-4" /> Export PDF
+                          {trackingOrderId === order.id ? "Hide Tracking" : "Track Order"}
                         </button>
-                        {order.status === "processing" && (
+                        <div className="flex gap-6">
                           <button
-                            onClick={() => handleCancelOrder(order.id)}
-                            className="text-destructive hover:underline font-medium"
+                            onClick={() => handleExportPdf(order)}
+                            className="flex items-center gap-1.5 text-primary hover:underline font-medium"
                           >
-                            Cancel Order
+                            <Download className="size-4" /> Export PDF
                           </button>
-                        )}
+                          {order.status === "processing" && (
+                            <button
+                              onClick={() => handleCancelOrder(order.id)}
+                              className="text-destructive hover:underline font-medium"
+                            >
+                              Cancel Order
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
