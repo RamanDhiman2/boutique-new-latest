@@ -4,12 +4,107 @@ import { categories, products } from "./catalog";
 const supabaseUrl = import.meta.env["VITE_SUPABASE_URL"];
 const supabaseAnonKey = import.meta.env["VITE_SUPABASE_ANON_KEY"];
 
-const isConfigured = Boolean(
+const isProduction = import.meta.env.PROD;
+
+export const isConfigured = Boolean(
   supabaseUrl &&
   supabaseAnonKey &&
   supabaseUrl.startsWith("http") &&
   !supabaseUrl.includes("placeholder"),
 );
+
+// Fail-safe client for production when Supabase environment variables are missing.
+// Production must NEVER authenticate as a demo user or serve mock data.
+function createUnconfiguredProductionClient() {
+  const missingError = {
+    message: "Authentication service is currently unavailable. Supabase environment variables (VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY) are not configured.",
+  };
+
+  return {
+    auth: {
+      async getSession() {
+        return { data: { session: null }, error: null };
+      },
+      onAuthStateChange(_cb: (event: string, session: Session | null) => void) {
+        return {
+          data: {
+            subscription: {
+              unsubscribe: () => {},
+            },
+          },
+        };
+      },
+      async signInWithPassword() {
+        return { data: { user: null, session: null }, error: missingError };
+      },
+      async signUp() {
+        return { data: { user: null, session: null }, error: missingError };
+      },
+      async signInWithOAuth() {
+        return { data: { provider: "google", url: null }, error: missingError };
+      },
+      async signOut() {
+        return { error: null };
+      },
+      async updateUser() {
+        return { data: { user: null }, error: missingError };
+      },
+    },
+    from(table: string) {
+      return {
+        select(_cols?: string) {
+          return {
+            eq(_col: string, _val: unknown) {
+              const runQuery = async () => ({ data: [], error: missingError });
+              const promise: any = runQuery();
+              promise.order = () => runQuery();
+              return promise;
+            },
+            order(_col: string) {
+              return Promise.resolve({ data: [], error: missingError });
+            },
+            then(onfulfilled?: (val: any) => any, onrejected?: (reason: any) => any) {
+              return Promise.resolve({ data: [], error: missingError }).then(onfulfilled, onrejected);
+            },
+          };
+        },
+        insert() {
+          const promise: any = Promise.resolve({ data: null, error: missingError });
+          promise.select = () => ({
+            single: () => Promise.resolve({ data: null, error: missingError }),
+            maybeSingle: () => Promise.resolve({ data: null, error: missingError }),
+          });
+          return promise;
+        },
+        update() {
+          const builder: any = {
+            eq() { return builder; },
+            select() { return builder; },
+            single() { return Promise.resolve({ data: null, error: missingError }); },
+            then(onf?: any, onr?: any) { return Promise.resolve({ data: null, error: missingError }).then(onf, onr); },
+          };
+          return builder;
+        },
+        delete() {
+          const builder: any = {
+            eq() { return builder; },
+            select() { return builder; },
+            then(onf?: any, onr?: any) { return Promise.resolve({ data: null, error: missingError }).then(onf, onr); },
+          };
+          return builder;
+        },
+      };
+    },
+    async rpc(_funcName: string) {
+      return { data: null, error: missingError };
+    },
+    functions: {
+      async invoke() {
+        return { data: null, error: missingError };
+      },
+    },
+  };
+}
 
 export interface AddressRecord {
   id: string;
@@ -105,20 +200,8 @@ function createMockSupabase() {
   type AuthListener = (event: string, session: Session | null) => void;
   const authListeners: AuthListener[] = [];
 
-  const defaultUser: User = {
-    id: "demo-user-123",
-    app_metadata: {},
-    user_metadata: { full_name: "Simran Kaur" },
-    aud: "authenticated",
-    created_at: "2026-01-01T00:00:00.000Z",
-    email: "simran@sohnimutiyaar.co.uk",
-    phone: "",
-    role: "authenticated",
-    updated_at: "2026-01-01T00:00:00.000Z",
-  };
-
   const getSession = (): Session | null => {
-    const user = getStorage<User | null>("user", defaultUser);
+    const user = getStorage<User | null>("user", null);
     if (!user) return null;
     return {
       access_token: "mock-access-token",
@@ -156,7 +239,6 @@ function createMockSupabase() {
           return { data: { user: null, session: null }, error: { message: "Email is required" } };
         }
         const registeredUsers = getStorage<string[]>("registered_users", [
-          "simran@sohnimutiyaar.co.uk",
           "customer@gmail.com",
         ]);
         if (!registeredUsers.includes(email)) {
@@ -166,10 +248,15 @@ function createMockSupabase() {
           };
         }
         const user: User = {
-          ...defaultUser,
           id: "user-" + btoa(email).slice(0, 8),
-          email,
+          app_metadata: {},
           user_metadata: { full_name: email.split("@")[0] },
+          aud: "authenticated",
+          created_at: new Date().toISOString(),
+          email,
+          phone: "",
+          role: "authenticated",
+          updated_at: new Date().toISOString(),
         };
         setStorage("user", user);
         const session = getSession();
@@ -188,7 +275,6 @@ function createMockSupabase() {
           return { data: { user: null, session: null }, error: { message: "Email is required" } };
         }
         const registeredUsers = getStorage<string[]>("registered_users", [
-          "simran@sohnimutiyaar.co.uk",
           "customer@gmail.com",
         ]);
         if (registeredUsers.includes(email)) {
@@ -201,10 +287,15 @@ function createMockSupabase() {
         setStorage("registered_users", registeredUsers);
 
         const user: User = {
-          ...defaultUser,
           id: "user-" + btoa(email).slice(0, 8),
-          email,
+          app_metadata: {},
           user_metadata: { full_name: options?.data?.full_name || email.split("@")[0] },
+          aud: "authenticated",
+          created_at: new Date().toISOString(),
+          email,
+          phone: "",
+          role: "authenticated",
+          updated_at: new Date().toISOString(),
         };
         setStorage("user", user);
         const session = getSession();
@@ -222,10 +313,15 @@ function createMockSupabase() {
         };
       }) {
         const user: User = {
-          ...defaultUser,
           id: "oauth-google-user",
+          app_metadata: {},
           email: "customer@gmail.com",
           user_metadata: { full_name: `Priya Sharma (${provider})` },
+          aud: "authenticated",
+          created_at: new Date().toISOString(),
+          phone: "",
+          role: "authenticated",
+          updated_at: new Date().toISOString(),
         };
         setStorage("user", user);
         const session = getSession();
@@ -242,7 +338,10 @@ function createMockSupabase() {
         return { error: null as AuthErrorLike | null };
       },
       async updateUser({ data }: { data: { full_name?: string } }) {
-        const current = getStorage<User>("user", defaultUser);
+        const current = getStorage<User | null>("user", null);
+        if (!current) {
+          return { data: { user: null }, error: { message: "Not authenticated" } };
+        }
         const updated: User = {
           ...current,
           user_metadata: { ...current.user_metadata, ...data },
@@ -260,24 +359,7 @@ function createMockSupabase() {
             eq(col: string, val: unknown) {
               const runQuery = async (): Promise<QueryResult<Record<string, unknown>>> => {
                 if (table === "addresses") {
-                  let records = getStorage<AddressRecord[]>("addresses", []);
-                  if (records.length === 0) {
-                    records = [
-                      {
-                        id: "addr_1",
-                        user_id: String(val),
-                        full_name: "Simran Kaur",
-                        street: "14 Belgrave Road",
-                        city: "Leicester",
-                        state: "Leicestershire",
-                        zip: "LE4 6AS",
-                        country: "United Kingdom",
-                        phone: "+44 7739 307042",
-                        type: "Shipping",
-                      },
-                    ];
-                    setStorage("addresses", records);
-                  }
+                  const records = getStorage<AddressRecord[]>("addresses", []);
                   const filtered = records.filter(
                     (r) => (r as unknown as Record<string, unknown>)[col] === val,
                   );
@@ -285,28 +367,7 @@ function createMockSupabase() {
                 }
 
                 if (table === "orders") {
-                  let orders = getStorage<OrderRecord[]>("orders", []);
-                  if (orders.length === 0) {
-                    orders = [
-                      {
-                        id: "ord_91823a7",
-                        user_id: String(val),
-                        total_amount: 890,
-                        status: "processing",
-                        created_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-                        order_items: [
-                          {
-                            id: "item_1",
-                            product_id: "Rani Bridal Suit",
-                            size: "M",
-                            quantity: 1,
-                            price: 890,
-                          },
-                        ],
-                      },
-                    ];
-                    setStorage("orders", orders);
-                  }
+                  const orders = getStorage<OrderRecord[]>("orders", []);
                   const filtered = orders.filter(
                     (r) => (r as unknown as Record<string, unknown>)[col] === val,
                   );
@@ -567,7 +628,10 @@ function createMockSupabase() {
       if (funcName === "create_order_secure") {
         const rawAddressId = String(args["p_address_id"] || "");
         const session = getSession();
-        const userId = session?.user?.id || "demo-user-123";
+        const userId = session?.user?.id;
+        if (!userId) {
+          return { data: null, error: { message: "Unauthorized: Please sign in to place an order" } };
+        }
 
         // Validate address
         const addresses = getStorage<AddressRecord[]>("addresses", []);
@@ -649,6 +713,10 @@ function createMockSupabase() {
 }
 
 // Client export compatible with Supabase operations used in the app
-export const supabase = (isConfigured
-  ? createClient(supabaseUrl!, supabaseAnonKey!)
-  : createMockSupabase()) as unknown as ReturnType<typeof createMockSupabase>;
+export const supabase = (
+  isConfigured
+    ? createClient(supabaseUrl!, supabaseAnonKey!)
+    : isProduction
+      ? createUnconfiguredProductionClient()
+      : createMockSupabase()
+) as unknown as ReturnType<typeof createMockSupabase>;

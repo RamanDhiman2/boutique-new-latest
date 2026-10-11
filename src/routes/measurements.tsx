@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PageHeader } from "@/components/site/Chrome";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { useAuth } from "@/lib/auth";
 import { Ruler, RotateCcw, BookOpen, ArrowRight, Scissors, Check, Mail } from "lucide-react";
 import { toast } from "sonner";
 
@@ -380,7 +381,8 @@ export const Route = createFileRoute("/measurements")({
 });
 
 function MeasurementsPage() {
-  const [measurements, setMeasurements] = useState<CustomerMeasurements>({
+  const { user } = useAuth();
+  const [measurements, setMeasurements] = useState<CustomerMeasurements>(() => ({
     values: { ...STANDARD_PRESETS.M.values },
     unit: "inches",
     fitPreference: "regular",
@@ -389,9 +391,22 @@ function MeasurementsPage() {
     neckStyle: "round",
     notes:
       "Please keep side slits (chak) modest. Add 2 inches extra inside margin for future alterations.",
-    customerName: "Simran Kaur",
-    phone: "+91 98765 43210",
-  });
+    customerName: "",
+    phone: "",
+  }));
+
+  useEffect(() => {
+    if (user) {
+      const meta = user.user_metadata as Record<string, any> | undefined;
+      const name = meta?.["full_name"] || meta?.["name"] || "";
+      const phone = user.phone || meta?.["phone"] || "";
+      setMeasurements((prev) => ({
+        ...prev,
+        customerName: prev.customerName || name,
+        phone: prev.phone || phone,
+      }));
+    }
+  }, [user]);
 
   const [activeMetric, setActiveMetric] = useState<MetricKey | null>(null);
   const [hoveredMetric, setHoveredMetric] = useState<MetricKey | null>(null);
@@ -1153,11 +1168,11 @@ function SaveSlipModal({
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <span className="text-stone-500 text-xs block">Name</span>
-              <span className="font-medium">{measurements.customerName || "Simran Kaur"}</span>
+              <span className="font-medium">{measurements.customerName || "Customer"}</span>
             </div>
             <div>
               <span className="text-stone-500 text-xs block">Phone</span>
-              <span className="font-medium">{measurements.phone || "+91 98765 43210"}</span>
+              <span className="font-medium">{measurements.phone || "Not provided"}</span>
             </div>
             <div>
               <span className="text-stone-500 text-xs block">Fit Preference</span>

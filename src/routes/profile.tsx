@@ -99,7 +99,19 @@ function ProfilePage() {
 
   const handleLogout = async () => {
     clear();
+    const currentUserId = user?.id;
     await supabase.auth.signOut();
+    if (typeof window !== "undefined") {
+      try {
+        if (currentUserId) {
+          localStorage.removeItem(`deleted_addrs_${currentUserId}`);
+          localStorage.removeItem(`default_addr_${currentUserId}`);
+        }
+        localStorage.removeItem("mock_sb_user");
+      } catch {
+        // ignore storage errors
+      }
+    }
     toast.success("Logged out successfully");
     navigate({ to: "/" });
   };
