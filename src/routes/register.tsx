@@ -33,7 +33,9 @@ function RegisterPage() {
     if (error && typeof error === "object" && "message" in error) {
       const msg = String((error as { message: string }).message);
       if (msg.toLowerCase().includes("user already registered")) {
-        toast.error("An account with this email already exists. Please log in or use Google sign-in if you originally registered with Google.");
+        toast.error(
+          "An account with this email already exists. Please log in or use Google sign-in if you originally registered with Google.",
+        );
       } else {
         toast.error(msg);
       }

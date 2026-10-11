@@ -37,9 +37,9 @@ describe("EmailJS Service Integration", () => {
   });
 
   it("sends contact enquiry with correct template parameters when configured", async () => {
-    import.meta.env.VITE_EMAILJS_SERVICE_ID = "service_test123";
-    import.meta.env.VITE_EMAILJS_TEMPLATE_ID = "template_test456";
-    import.meta.env.VITE_EMAILJS_PUBLIC_KEY = "public_test789";
+    import.meta.env["VITE_EMAILJS_SERVICE_ID"] = "service_test123";
+    import.meta.env["VITE_EMAILJS_TEMPLATE_ID"] = "template_test456";
+    import.meta.env["VITE_EMAILJS_PUBLIC_KEY"] = "public_test789";
 
     const mockedSend = vi.mocked(emailjs.send).mockResolvedValueOnce({
       status: 200,
@@ -71,9 +71,9 @@ describe("EmailJS Service Integration", () => {
   });
 
   it("generates default subject when not provided", async () => {
-    import.meta.env.VITE_EMAILJS_SERVICE_ID = "service_test123";
-    import.meta.env.VITE_EMAILJS_TEMPLATE_ID = "template_test456";
-    import.meta.env.VITE_EMAILJS_PUBLIC_KEY = "public_test789";
+    import.meta.env["VITE_EMAILJS_SERVICE_ID"] = "service_test123";
+    import.meta.env["VITE_EMAILJS_TEMPLATE_ID"] = "template_test456";
+    import.meta.env["VITE_EMAILJS_PUBLIC_KEY"] = "public_test789";
 
     const mockedSend = vi.mocked(emailjs.send).mockResolvedValueOnce({
       status: 200,
