@@ -105,7 +105,32 @@ export default {
 
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      const normalized = await normalizeCatastrophicSsrResponse(response);
+
+      const contentType = normalized.headers.get("content-type") || "";
+      if (contentType.includes("text/html")) {
+        const text = await normalized.text();
+        const runtimeEnv = (env as Record<string, string>) || process.env;
+        const clientEnv = {
+          VITE_SUPABASE_URL: runtimeEnv["VITE_SUPABASE_URL"] || "",
+          VITE_SUPABASE_ANON_KEY: runtimeEnv["VITE_SUPABASE_ANON_KEY"] || "",
+          VITE_STRIPE_PUBLISHABLE_KEY: runtimeEnv["VITE_STRIPE_PUBLISHABLE_KEY"] || "",
+          VITE_EMAILJS_SERVICE_ID: runtimeEnv["VITE_EMAILJS_SERVICE_ID"] || "",
+          VITE_EMAILJS_TEMPLATE_ID: runtimeEnv["VITE_EMAILJS_TEMPLATE_ID"] || "",
+          VITE_EMAILJS_PUBLIC_KEY: runtimeEnv["VITE_EMAILJS_PUBLIC_KEY"] || "",
+        };
+
+        const envScript = `<script>window.__ENV__ = Object.assign(window.__ENV__ || {}, ${JSON.stringify(clientEnv)});</script>`;
+        const injected = text.replace("<head>", `<head>${envScript}`);
+
+        return new Response(injected, {
+          status: normalized.status,
+          statusText: normalized.statusText,
+          headers: normalized.headers,
+        });
+      }
+
+      return normalized;
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {

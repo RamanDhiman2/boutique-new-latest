@@ -20,12 +20,17 @@ describe("EmailJS Service Integration", () => {
     delete process.env["VITE_EMAILJS_SERVICE_ID"];
     delete process.env["VITE_EMAILJS_TEMPLATE_ID"];
     delete process.env["VITE_EMAILJS_PUBLIC_KEY"];
+    delete (import.meta.env as any)["VITE_EMAILJS_SERVICE_ID"];
+    delete (import.meta.env as any)["VITE_EMAILJS_TEMPLATE_ID"];
+    delete (import.meta.env as any)["VITE_EMAILJS_PUBLIC_KEY"];
 
     expect(isEmailJSConfigured()).toBe(false);
   });
 
   it("throws a descriptive error when required env vars are missing upon send", async () => {
     delete process.env["VITE_EMAILJS_SERVICE_ID"];
+    delete (import.meta.env as any)["VITE_EMAILJS_SERVICE_ID"];
+
 
     await expect(
       sendContactEmail({
@@ -37,6 +42,9 @@ describe("EmailJS Service Integration", () => {
   });
 
   it("sends contact enquiry with correct template parameters when configured", async () => {
+    process.env["VITE_EMAILJS_SERVICE_ID"] = "service_test123";
+    process.env["VITE_EMAILJS_TEMPLATE_ID"] = "template_test456";
+    process.env["VITE_EMAILJS_PUBLIC_KEY"] = "public_test789";
     import.meta.env["VITE_EMAILJS_SERVICE_ID"] = "service_test123";
     import.meta.env["VITE_EMAILJS_TEMPLATE_ID"] = "template_test456";
     import.meta.env["VITE_EMAILJS_PUBLIC_KEY"] = "public_test789";
@@ -71,6 +79,9 @@ describe("EmailJS Service Integration", () => {
   });
 
   it("generates default subject when not provided", async () => {
+    process.env["VITE_EMAILJS_SERVICE_ID"] = "service_test123";
+    process.env["VITE_EMAILJS_TEMPLATE_ID"] = "template_test456";
+    process.env["VITE_EMAILJS_PUBLIC_KEY"] = "public_test789";
     import.meta.env["VITE_EMAILJS_SERVICE_ID"] = "service_test123";
     import.meta.env["VITE_EMAILJS_TEMPLATE_ID"] = "template_test456";
     import.meta.env["VITE_EMAILJS_PUBLIC_KEY"] = "public_test789";
@@ -100,6 +111,9 @@ describe("EmailJS Service Integration", () => {
   });
 
   it("sends complete order notification email with all customer, shipping, and product items", async () => {
+    process.env["VITE_EMAILJS_SERVICE_ID"] = "service_order_test";
+    process.env["VITE_EMAILJS_TEMPLATE_ID"] = "template_order_test";
+    process.env["VITE_EMAILJS_PUBLIC_KEY"] = "public_order_test";
     import.meta.env["VITE_EMAILJS_SERVICE_ID"] = "service_order_test";
     import.meta.env["VITE_EMAILJS_TEMPLATE_ID"] = "template_order_test";
     import.meta.env["VITE_EMAILJS_PUBLIC_KEY"] = "public_order_test";
@@ -172,6 +186,9 @@ describe("EmailJS Service Integration", () => {
   });
 
   it("sends product review notification email to admin via EmailJS", async () => {
+    process.env["VITE_EMAILJS_SERVICE_ID"] = "service_review_test";
+    process.env["VITE_EMAILJS_TEMPLATE_ID"] = "template_review_test";
+    process.env["VITE_EMAILJS_PUBLIC_KEY"] = "public_review_test";
     import.meta.env["VITE_EMAILJS_SERVICE_ID"] = "service_review_test";
     import.meta.env["VITE_EMAILJS_TEMPLATE_ID"] = "template_review_test";
     import.meta.env["VITE_EMAILJS_PUBLIC_KEY"] = "public_review_test";

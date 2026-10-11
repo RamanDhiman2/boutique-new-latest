@@ -1,17 +1,48 @@
 import { createClient, type User, type Session } from "@supabase/supabase-js";
 import { categories, products } from "./catalog";
 
-const supabaseUrl = import.meta.env["VITE_SUPABASE_URL"];
-const supabaseAnonKey = import.meta.env["VITE_SUPABASE_ANON_KEY"];
+/**
+ * Retrieves public environment variables safely across:
+ * 1. Browser runtime: window.__ENV__ (injected into HTML by the SSR server)
+ * 2. Node.js server runtime: process.env (injected by hosting platform like GoDaddy)
+ * 3. Vite build/dev time: import.meta.env
+ */
+export function getRuntimeEnv(key: string): string {
+  if (typeof window !== "undefined") {
+    const browserEnv = (window as any).__ENV__;
+    if (browserEnv && typeof browserEnv[key] === "string" && browserEnv[key].trim() !== "") {
+      return browserEnv[key];
+    }
+  }
 
+  // In Node.js / SSR / Vitest test environments, process.env is the authoritative environment
+  if (typeof process !== "undefined" && process?.env) {
+    return process.env[key] || "";
+  }
+
+  const buildEnv = (import.meta as any)?.env?.[key];
+  if (typeof buildEnv === "string" && buildEnv.trim() !== "") {
+    return buildEnv;
+  }
+
+  return "";
+}
+
+function checkIsConfigured(url: string, key: string): boolean {
+  return Boolean(
+    url &&
+    key &&
+    url.startsWith("http") &&
+    !url.includes("placeholder"),
+  );
+}
+
+const buildSupabaseUrl = getRuntimeEnv("VITE_SUPABASE_URL");
+const buildSupabaseAnonKey = getRuntimeEnv("VITE_SUPABASE_ANON_KEY");
 const isProduction = import.meta.env.PROD;
 
-export const isConfigured = Boolean(
-  supabaseUrl &&
-  supabaseAnonKey &&
-  supabaseUrl.startsWith("http") &&
-  !supabaseUrl.includes("placeholder"),
-);
+export const isConfigured = checkIsConfigured(buildSupabaseUrl, buildSupabaseAnonKey);
+
 
 // Fail-safe client for production when Supabase environment variables are missing.
 // Production must NEVER authenticate as a demo user or serve mock data.
@@ -712,11 +743,43 @@ function createMockSupabase() {
   };
 }
 
-// Client export compatible with Supabase operations used in the app
-export const supabase = (
-  isConfigured
-    ? createClient(supabaseUrl!, supabaseAnonKey!)
-    : isProduction
-      ? createUnconfiguredProductionClient()
-      : createMockSupabase()
-) as unknown as ReturnType<typeof createMockSupabase>;
+let cachedClient: any = null;
+let lastUrl = "";
+let lastKey = "";
+
+export function getSupabaseClient() {
+  const currentUrl = getRuntimeEnv("VITE_SUPABASE_URL");
+  const currentKey = getRuntimeEnv("VITE_SUPABASE_ANON_KEY");
+  const configured = checkIsConfigured(currentUrl, currentKey);
+
+  if (configured) {
+    if (!cachedClient || lastUrl !== currentUrl || lastKey !== currentKey) {
+      cachedClient = createClient(currentUrl, currentKey);
+      lastUrl = currentUrl;
+      lastKey = currentKey;
+    }
+    return cachedClient;
+  }
+
+  if (isProduction) {
+    return createUnconfiguredProductionClient();
+  }
+
+  if (!cachedClient) {
+    cachedClient = createMockSupabase();
+  }
+  return cachedClient;
+}
+
+// Client export compatible with Supabase operations used in the app, proxied for dynamic runtime env support
+export const supabase = new Proxy({} as ReturnType<typeof createMockSupabase>, {
+  get(_target, prop) {
+    const client = getSupabaseClient();
+    const value = client[prop];
+    if (typeof value === "function") {
+      return value.bind(client);
+    }
+    return value;
+  },
+});
+

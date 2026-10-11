@@ -1,5 +1,24 @@
-import { loadStripe } from "@stripe/stripe-js";
+import { loadStripe, type Stripe } from "@stripe/stripe-js";
+import { getRuntimeEnv } from "./supabase";
 
-// Make sure you have VITE_STRIPE_PUBLISHABLE_KEY in your .env file
-// This is the only Stripe key exposed to the browser; STRIPE_SECRET_KEY must never be VITE_-
-export const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
+let stripePromiseInstance: Promise<Stripe | null> | null = null;
+
+export function getStripePromise(): Promise<Stripe | null> {
+  if (!stripePromiseInstance) {
+    const key = getRuntimeEnv("VITE_STRIPE_PUBLISHABLE_KEY");
+    stripePromiseInstance = loadStripe(key);
+  }
+  return stripePromiseInstance;
+}
+
+export const stripePromise = new Proxy(Promise.resolve(null) as Promise<Stripe | null>, {
+  get(_target, prop) {
+    const realPromise = getStripePromise();
+    const value = (realPromise as any)[prop];
+    if (typeof value === "function") {
+      return value.bind(realPromise);
+    }
+    return value;
+  },
+});
+
