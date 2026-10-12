@@ -8,7 +8,13 @@ import { categories, products } from "./catalog";
  * 3. Vite build/dev time: import.meta.env
  */
 export function getRuntimeEnv(key: string): string {
-  // 1. Browser runtime: Check SSR injected window.__ENV__
+  // 1. In genuine Node.js runtime (SSR server, Vitest test runner)
+  // When process is defined in Node, process.env is authoritative and reflects deletions during tests
+  if (typeof process !== "undefined" && process?.release?.name === "node") {
+    return process.env?.[key] || "";
+  }
+
+  // 2. Browser runtime: Check SSR injected window.__ENV__ first
   if (typeof window !== "undefined") {
     const browserEnv = (window as any).__ENV__;
     if (browserEnv && typeof browserEnv[key] === "string" && browserEnv[key].trim() !== "") {
@@ -16,13 +22,7 @@ export function getRuntimeEnv(key: string): string {
     }
   }
 
-  // 2. Node.js process / Vitest jsdom tests:
-  // When process is defined (Node/SSR/tests), process.env is the authoritative source.
-  if (typeof process !== "undefined" && process?.env) {
-    return process.env[key] || "";
-  }
-
-  // 3. Static Vite client environment: import.meta.env (pure browser without Node)
+  // 3. Vite build/dev client environment: import.meta.env
   try {
     const buildEnv = (import.meta as any)?.env?.[key];
     if (typeof buildEnv === "string" && buildEnv.trim() !== "") {
@@ -30,6 +30,11 @@ export function getRuntimeEnv(key: string): string {
     }
   } catch {
     // ignore
+  }
+
+  // 4. Fallback for generic environments with process.env
+  if (typeof process !== "undefined" && process?.env && process.env[key]) {
+    return process.env[key]!;
   }
 
   return "";
