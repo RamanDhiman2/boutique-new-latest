@@ -55,18 +55,25 @@ function LoginPage() {
         provider: "google",
         options: {
           redirectTo: typeof window !== "undefined" ? `${window.location.origin}/` : undefined,
+          queryParams: {
+            prompt: "select_account",
+            access_type: "offline",
+          },
         },
       });
-      if (error && typeof error === "object" && "message" in error) {
-        toast.error(String((error as { message: string }).message));
+
+      if (error) {
+        toast.error(error.message || "Failed to initiate Google login");
         return;
       }
-      if (data && typeof data === "object" && "url" in data && data.url) {
+
+      if (data?.url) {
+        // Redirect the user to Google's official account selection page
         window.location.href = data.url;
         return;
       }
-      toast.success("Signed in with Google!");
-      navigate({ to: "/" });
+
+      toast.error("Google authentication service did not provide a login redirect URL.");
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to sign in with Google");
     } finally {

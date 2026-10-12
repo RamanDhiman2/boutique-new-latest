@@ -8,6 +8,7 @@ import { categories, products } from "./catalog";
  * 3. Vite build/dev time: import.meta.env
  */
 export function getRuntimeEnv(key: string): string {
+  // 1. Browser runtime: Check SSR injected window.__ENV__
   if (typeof window !== "undefined") {
     const browserEnv = (window as any).__ENV__;
     if (browserEnv && typeof browserEnv[key] === "string" && browserEnv[key].trim() !== "") {
@@ -15,14 +16,20 @@ export function getRuntimeEnv(key: string): string {
     }
   }
 
-  // In Node.js / SSR / Vitest test environments, process.env is the authoritative environment
+  // 2. Node.js process / Vitest jsdom tests:
+  // When process is defined (Node/SSR/tests), process.env is the authoritative source.
   if (typeof process !== "undefined" && process?.env) {
     return process.env[key] || "";
   }
 
-  const buildEnv = (import.meta as any)?.env?.[key];
-  if (typeof buildEnv === "string" && buildEnv.trim() !== "") {
-    return buildEnv;
+  // 3. Static Vite client environment: import.meta.env (pure browser without Node)
+  try {
+    const buildEnv = (import.meta as any)?.env?.[key];
+    if (typeof buildEnv === "string" && buildEnv.trim() !== "") {
+      return buildEnv;
+    }
+  } catch {
+    // ignore
   }
 
   return "";
@@ -335,7 +342,6 @@ function createMockSupabase() {
       },
       async signInWithOAuth({
         provider,
-        options,
       }: {
         provider: string;
         options?: {
@@ -343,24 +349,11 @@ function createMockSupabase() {
           queryParams?: Record<string, string> | undefined;
         };
       }) {
-        const user: User = {
-          id: "oauth-google-user",
-          app_metadata: {},
-          email: "customer@gmail.com",
-          user_metadata: { full_name: `Priya Sharma (${provider})` },
-          aud: "authenticated",
-          created_at: new Date().toISOString(),
-          phone: "",
-          role: "authenticated",
-          updated_at: new Date().toISOString(),
-        };
-        setStorage("user", user);
-        const session = getSession();
-        notifyAuthChange("SIGNED_IN", session);
-        const oauthUrl: string | null = options?.redirectTo ? null : null;
         return {
-          data: { provider, url: oauthUrl },
-          error: null as AuthErrorLike | null,
+          data: { provider, url: null },
+          error: {
+            message: `Google OAuth login is not available because real Supabase authentication credentials are not configured. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable Google sign-in.`,
+          },
         };
       },
       async signOut() {

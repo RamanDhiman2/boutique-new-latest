@@ -112,4 +112,22 @@ describe("Authentication & Account Privacy Audit", () => {
     expect(typeof isConfigured).toBe("boolean");
     expect(isConfigured).toBe(true);
   });
+
+  it("8. Google OAuth never defaults to dummy account (no Priya Sharma or hardcoded user)", async () => {
+    const { data: sessionBefore } = await supabase.auth.getSession();
+    expect(sessionBefore.session).toBeNull();
+
+    // Call signInWithOAuth with prompt parameter
+    const res = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        queryParams: { prompt: "select_account" },
+      },
+    });
+
+    // It must return real OAuth data or real error; it must NEVER create an in-memory dummy session
+    const { data: sessionAfter } = await supabase.auth.getSession();
+    expect(sessionAfter.session).toBeNull();
+  });
 });
+
