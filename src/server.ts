@@ -53,7 +53,8 @@ export default {
       if (url.pathname === "/api/create-payment-intent" && request.method === "POST") {
         try {
           const body = await request.json();
-          const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
+          const authHeader =
+            request.headers.get("authorization") || request.headers.get("Authorization");
           const environment = (env as Record<string, string>) || process.env;
 
           const result = await processPaymentIntentCreation({
@@ -70,17 +71,21 @@ export default {
           });
         } catch (err: any) {
           console.error("Payment intent creation error:", err);
-          return new Response(JSON.stringify({ error: err.message || "Failed to create payment intent" }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({ error: err.message || "Failed to create payment intent" }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
         }
       }
 
       if (url.pathname === "/api/confirm-payment" && request.method === "POST") {
         try {
           const body = await request.json();
-          const authHeader = request.headers.get("authorization") || request.headers.get("Authorization");
+          const authHeader =
+            request.headers.get("authorization") || request.headers.get("Authorization");
           const environment = (env as Record<string, string>) || process.env;
 
           const result = await processPaymentConfirmation({
@@ -96,10 +101,13 @@ export default {
           });
         } catch (err: any) {
           console.error("Payment confirmation error:", err);
-          return new Response(JSON.stringify({ error: err.message || "Failed to confirm payment" }), {
-            status: 400,
-            headers: { "Content-Type": "application/json" },
-          });
+          return new Response(
+            JSON.stringify({ error: err.message || "Failed to confirm payment" }),
+            {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
         }
       }
 
@@ -118,6 +126,7 @@ export default {
           VITE_EMAILJS_SERVICE_ID: runtimeEnv["VITE_EMAILJS_SERVICE_ID"] || "",
           VITE_EMAILJS_TEMPLATE_ID: runtimeEnv["VITE_EMAILJS_TEMPLATE_ID"] || "",
           VITE_EMAILJS_PUBLIC_KEY: runtimeEnv["VITE_EMAILJS_PUBLIC_KEY"] || "",
+          VITE_SITE_URL: runtimeEnv["VITE_SITE_URL"] || runtimeEnv["VITE_PUBLIC_URL"] || "",
         };
 
         const envScript = `<script>window.__ENV__ = Object.assign(window.__ENV__ || {}, ${JSON.stringify(clientEnv)});</script>`;

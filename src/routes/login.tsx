@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { supabase, getAuthRedirectUrl } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -51,10 +51,11 @@ function LoginPage() {
   const handleOAuthLogin = async () => {
     try {
       setLoading(true);
+      const redirectUrl = getAuthRedirectUrl();
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: typeof window !== "undefined" ? `${window.location.origin}/` : undefined,
+          redirectTo: redirectUrl,
           queryParams: {
             prompt: "select_account",
             access_type: "offline",

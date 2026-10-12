@@ -55,6 +55,24 @@ const isProduction = import.meta.env.PROD;
 
 export const isConfigured = checkIsConfigured(buildSupabaseUrl, buildSupabaseAnonKey);
 
+/**
+ * Resolves the canonical OAuth redirect URL.
+ * Prioritizes VITE_SITE_URL / VITE_PUBLIC_URL when set (essential for production deployments),
+ * and safely falls back to window.location.origin in browser contexts, targeting /auth/callback.
+ */
+export function getAuthRedirectUrl(): string {
+  const envUrl = getRuntimeEnv("VITE_SITE_URL") || getRuntimeEnv("VITE_PUBLIC_URL");
+  if (envUrl && envUrl.trim() !== "") {
+    const cleanUrl = envUrl.trim().replace(/\/+$/, "");
+    return `${cleanUrl}/auth/callback`;
+  }
+
+  if (typeof window !== "undefined" && window.location?.origin) {
+    return `${window.location.origin}/auth/callback`;
+  }
+
+  return "/auth/callback";
+}
 
 // Fail-safe client for production when Supabase environment variables are missing.
 // Production must NEVER authenticate as a demo user or serve mock data.
@@ -85,6 +103,9 @@ function createUnconfiguredProductionClient() {
       },
       async signInWithOAuth() {
         return { data: { provider: "google", url: null }, error: missingError };
+      },
+      async exchangeCodeForSession(_code: string) {
+        return { data: { user: null, session: null }, error: missingError };
       },
       async signOut() {
         return { error: null };
@@ -358,6 +379,14 @@ function createMockSupabase() {
           data: { provider, url: null },
           error: {
             message: `Google OAuth login is not available because real Supabase authentication credentials are not configured. Please configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable Google sign-in.`,
+          },
+        };
+      },
+      async exchangeCodeForSession(_code: string) {
+        return {
+          data: { user: null, session: null },
+          error: {
+            message: `Mock OAuth mode does not support code exchange.`,
           },
         };
       },

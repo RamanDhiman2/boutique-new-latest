@@ -26,6 +26,7 @@ import { Route as RegisterRouteImport } from './routes/register'
 import { Route as ShippingRouteImport } from './routes/shipping'
 import { Route as ShopRouteImport } from './routes/shop'
 import { Route as TermsOfServiceRouteImport } from './routes/terms-of-service'
+import { Route as AuthCallbackRouteImport } from './routes/auth.callback'
 import { Route as CollectionsIndexRouteImport } from './routes/collections.index'
 import { Route as CollectionsSlugRouteImport } from './routes/collections.$slug'
 import { Route as ProductIdRouteImport } from './routes/product.$id'
@@ -115,6 +116,11 @@ const TermsOfServiceRoute = TermsOfServiceRouteImport.update({
   path: '/terms-of-service',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthCallbackRoute = AuthCallbackRouteImport.update({
+  id: '/auth/callback',
+  path: '/auth/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CollectionsIndexRoute = CollectionsIndexRouteImport.update({
   id: '/collections/',
   path: '/collections/',
@@ -149,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/shipping': typeof ShippingRoute
   '/shop': typeof ShopRoute
   '/terms-of-service': typeof TermsOfServiceRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/product/$id': typeof ProductIdRoute
   '/collections/': typeof CollectionsIndexRoute
@@ -171,6 +178,7 @@ export interface FileRoutesByTo {
   '/shipping': typeof ShippingRoute
   '/shop': typeof ShopRoute
   '/terms-of-service': typeof TermsOfServiceRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/product/$id': typeof ProductIdRoute
   '/collections': typeof CollectionsIndexRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/shipping': typeof ShippingRoute
   '/shop': typeof ShopRoute
   '/terms-of-service': typeof TermsOfServiceRoute
+  '/auth/callback': typeof AuthCallbackRoute
   '/collections/$slug': typeof CollectionsSlugRoute
   '/product/$id': typeof ProductIdRoute
   '/collections/': typeof CollectionsIndexRoute
@@ -218,6 +227,7 @@ export interface FileRouteTypes {
     | '/shipping'
     | '/shop'
     | '/terms-of-service'
+    | '/auth/callback'
     | '/collections/$slug'
     | '/product/$id'
     | '/collections/'
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/shipping'
     | '/shop'
     | '/terms-of-service'
+    | '/auth/callback'
     | '/collections/$slug'
     | '/product/$id'
     | '/collections'
@@ -262,6 +273,7 @@ export interface FileRouteTypes {
     | '/shipping'
     | '/shop'
     | '/terms-of-service'
+    | '/auth/callback'
     | '/collections/$slug'
     | '/product/$id'
     | '/collections/'
@@ -285,6 +297,7 @@ export interface RootRouteChildren {
   ShippingRoute: typeof ShippingRoute
   ShopRoute: typeof ShopRoute
   TermsOfServiceRoute: typeof TermsOfServiceRoute
+  AuthCallbackRoute: typeof AuthCallbackRoute
   CollectionsSlugRoute: typeof CollectionsSlugRoute
   ProductIdRoute: typeof ProductIdRoute
   CollectionsIndexRoute: typeof CollectionsIndexRoute
@@ -411,6 +424,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsOfServiceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/auth/callback': {
+      id: '/auth/callback'
+      path: '/auth/callback'
+      fullPath: '/auth/callback'
+      preLoaderRoute: typeof AuthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/collections/': {
       id: '/collections/'
       path: '/collections'
@@ -453,6 +473,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShippingRoute: ShippingRoute,
   ShopRoute: ShopRoute,
   TermsOfServiceRoute: TermsOfServiceRoute,
+  AuthCallbackRoute: AuthCallbackRoute,
   CollectionsSlugRoute: CollectionsSlugRoute,
   ProductIdRoute: ProductIdRoute,
   CollectionsIndexRoute: CollectionsIndexRoute,
