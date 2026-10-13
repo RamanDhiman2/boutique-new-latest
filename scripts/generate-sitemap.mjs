@@ -7,7 +7,7 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 
 // 1. Target Base Domain (Can be overridden via environment variable)
-const BASE_URL = (process.env.SITE_URL || process.env.VITE_SITE_URL || 'https://sohnimutiyaar.com').replace(/\/+$/, '');
+const BASE_URL = (process.env.SITE_URL || process.env.VITE_SITE_URL || 'https://charminngchic.com').replace(/\/+$/, '');
 const TODAY = new Date().toISOString().split('T')[0];
 
 // 2. Blacklist of routes that search engines should NOT index
@@ -176,11 +176,13 @@ ${xmlEntries}
   if (fs.existsSync(robotsPath)) {
     let robotsContent = fs.readFileSync(robotsPath, 'utf8');
     const sitemapDirective = `Sitemap: ${BASE_URL}/sitemap.xml`;
-    if (!robotsContent.includes('Sitemap:')) {
+    if (robotsContent.includes('Sitemap:')) {
+      robotsContent = robotsContent.replace(/Sitemap:.*$/m, sitemapDirective);
+    } else {
       robotsContent = robotsContent.trimEnd() + `\n\n${sitemapDirective}\n`;
-      fs.writeFileSync(robotsPath, robotsContent, 'utf8');
-      console.log(`Appended Sitemap reference to ${robotsPath}`);
     }
+    fs.writeFileSync(robotsPath, robotsContent, 'utf8');
+    console.log(`Updated Sitemap reference in ${robotsPath}`);
   }
 }
 

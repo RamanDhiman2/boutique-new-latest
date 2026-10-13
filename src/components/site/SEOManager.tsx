@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useRouterState } from "@tanstack/react-router";
 import { categories, products } from "@/lib/catalog";
 
-const SITE_URL = ((import.meta.env["VITE_SITE_URL"] as string | undefined) || "https://sohnimutiyaar.com").replace(/\/+$/, "");
+const SITE_URL = ((import.meta.env["VITE_SITE_URL"] as string | undefined) || "https://charminngchic.com").replace(/\/+$/, "");
 
 const DEFAULT_TITLE = "SohniMutiyaar By CC — Indian Fashion & Bespoke Tailoring";
 const DEFAULT_DESC =
