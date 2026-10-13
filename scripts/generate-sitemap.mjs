@@ -52,7 +52,7 @@ function getStaticRoutes() {
     if (!file.endsWith('.tsx') && !file.endsWith('.ts')) continue;
 
     const baseName = file.replace(/\.(tsx|ts)$/, '');
-    
+
     // Skip excluded routes or dynamic route templates
     if (EXCLUDED_ROUTES.has(baseName) || baseName.includes('$')) {
       continue;
