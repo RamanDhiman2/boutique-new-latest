@@ -2,11 +2,13 @@ import { loadStripe, type Stripe } from "@stripe/stripe-js";
 import { getRuntimeEnv } from "./supabase";
 
 let stripePromiseInstance: Promise<Stripe | null> | null = null;
+let lastKey = "";
 
 export function getStripePromise(): Promise<Stripe | null> {
-  if (!stripePromiseInstance) {
-    const key = getRuntimeEnv("VITE_STRIPE_PUBLISHABLE_KEY");
-    stripePromiseInstance = loadStripe(key);
+  const key = getRuntimeEnv("VITE_STRIPE_PUBLISHABLE_KEY");
+  if (!stripePromiseInstance || lastKey !== key) {
+    lastKey = key;
+    stripePromiseInstance = key ? loadStripe(key) : Promise.resolve(null);
   }
   return stripePromiseInstance;
 }
