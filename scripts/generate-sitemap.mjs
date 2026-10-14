@@ -7,7 +7,7 @@ const __dirname = path.dirname(__filename);
 const rootDir = path.resolve(__dirname, '..');
 
 // 1. Target Base Domain (Can be overridden via environment variable)
-const BASE_URL = (process.env.SITE_URL || process.env.VITE_SITE_URL || 'https://charminngchic.com').replace(/\/+$/, '');
+const BASE_URL = 'https://charminngchic.com';
 const TODAY = new Date().toISOString().split('T')[0];
 
 // 2. Blacklist of routes that search engines should NOT index
