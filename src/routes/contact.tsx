@@ -113,7 +113,7 @@ function Contact() {
   const configured = isEmailJSConfigured();
 
   return (
-    <div className="mx-auto max-w-5xl px-5 pt-4 pb-20">
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8 pt-4 pb-20">
       <SiteBreadcrumb items={[{ label: "Contact Us" }]} />
       <PageHeader
         eyebrow="We'd love to hear from you"
@@ -121,19 +121,19 @@ function Contact() {
         text="For orders, custom designs or bridal consultations, send an enquiry below or email us directly."
       />
 
-      <div className="grid md:grid-cols-2 gap-16">
-        <div className="space-y-8">
+      <div className="grid md:grid-cols-2 gap-10 md:gap-16">
+        <div className="space-y-6 sm:space-y-8">
           <div>
             <div className="eyebrow text-primary mb-2">WhatsApp Enquiry</div>
             <a
               href={waLink("Hi SohniMutiyaar By CC, I'd like to enquire about an outfit.")}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 py-3 px-6 bg-[#25D366] hover:bg-[#20ba59] text-white font-medium text-xs uppercase tracking-wider rounded-sm shadow-sm transition-colors"
+              className="inline-flex items-center justify-center gap-2 py-3 px-6 bg-[#25D366] hover:bg-[#20ba59] text-white font-medium text-xs uppercase tracking-wider rounded-sm shadow-sm transition-colors w-full sm:w-auto"
             >
-              <WhatsAppIcon className="size-5" /> Chat on WhatsApp
+              <WhatsAppIcon className="size-5 shrink-0" /> Chat on WhatsApp
             </a>
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-2">
               Instant responses for custom designs, styling advice, and bridal orders.
             </p>
           </div>
@@ -142,11 +142,11 @@ function Contact() {
             <div className="eyebrow text-primary mb-2">Email Us Directly</div>
             <a
               href="mailto:Charminngchic@gmail.com"
-              className="inline-flex items-center gap-2 font-serif text-2xl hover:text-primary transition-colors"
+              className="inline-flex items-center gap-2 font-serif text-lg sm:text-2xl hover:text-primary transition-colors break-all"
             >
-              <Mail className="size-6 text-primary" /> Charminngchic@gmail.com
+              <Mail className="size-5 sm:size-6 text-primary shrink-0" /> <span>Charminngchic@gmail.com</span>
             </a>
-            <p className="text-sm text-muted-foreground mt-2">
+            <p className="text-xs sm:text-sm text-muted-foreground mt-2">
               Our team typically responds within 24 hours to assist with orders and custom
               requirements.
             </p>

@@ -488,7 +488,7 @@ export function AddressForm({
         <RadioGroup
           value={addressType}
           onValueChange={setAddressType}
-          className="flex flex-wrap gap-4 pt-1"
+          className="flex flex-wrap gap-2.5 sm:gap-4 pt-1"
           disabled={isSubmitting}
         >
           <label
@@ -499,7 +499,7 @@ export function AddressForm({
           >
             <RadioGroupItem value="Home" id={`${formId}-type-home`} />
             <Home className="size-3.5" />
-            Home (7 AM — 9 PM delivery)
+            Home (7 AM — 9 PM)
           </label>
 
           <label
@@ -510,7 +510,7 @@ export function AddressForm({
           >
             <RadioGroupItem value="Work" id={`${formId}-type-work`} />
             <Briefcase className="size-3.5" />
-            Work (10 AM — 6 PM delivery)
+            Work (10 AM — 6 PM)
           </label>
 
           <label
@@ -543,11 +543,11 @@ export function AddressForm({
       </div>
 
       {/* 9. Action Buttons */}
-      <div className="flex gap-3 pt-4 border-t">
+      <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t">
         <button
           type="submit"
           disabled={isSubmitting}
-          className="btn-primary !py-2.5 !px-6 !text-xs flex items-center gap-2"
+          className="btn-primary !py-3 sm:!py-2.5 !px-6 !text-xs flex items-center justify-center gap-2 w-full sm:w-auto"
         >
           {isSubmitting && <Loader2 className="size-3.5 animate-spin" />}
           {submitLabel || (initialData ? "Save Changes" : "Save Address")}
@@ -557,7 +557,7 @@ export function AddressForm({
             type="button"
             disabled={isSubmitting}
             onClick={onCancel}
-            className="btn-outline !py-2.5 !px-5 !text-xs"
+            className="btn-outline !py-3 sm:!py-2.5 !px-5 !text-xs text-center w-full sm:w-auto"
           >
             {cancelLabel}
           </button>

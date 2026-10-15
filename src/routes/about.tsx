@@ -23,33 +23,33 @@ export const Route = createFileRoute("/about")({
 
 function About() {
   return (
-    <div className="mx-auto max-w-[1500px] px-5 lg:px-10 pt-4 pb-20">
+    <div className="mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-10 pt-4 pb-20">
       <SiteBreadcrumb items={[{ label: "About Us" }]} />
-      <PageHeader eyebrow="Charming Chic" title="Where Tradition Meets Modern Elegance" />
+      <PageHeader eyebrow="Charminng Chic" title="Where Tradition Meets Modern Elegance" />
       <img
         src={heroImage}
         alt="SohniMutiyaar By CC"
-        className="w-full max-h-[620px] object-cover"
+        className="w-full max-h-[340px] sm:max-h-[480px] md:max-h-[620px] object-cover rounded-sm"
       />
-      <div className="grid md:grid-cols-2 gap-16 mt-20 items-center">
-        <div className="space-y-6 text-muted-foreground leading-relaxed">
-          <p className="font-serif text-3xl text-foreground leading-snug">
+      <div className="grid md:grid-cols-2 gap-8 md:gap-16 mt-12 sm:mt-20 items-center">
+        <div className="space-y-4 sm:space-y-6 text-muted-foreground leading-relaxed">
+          <p className="font-serif text-2xl sm:text-3xl text-foreground leading-snug">
             SohniMutiyaar By CC was born from a love of Indian craftsmanship and the women who wear
             it.
           </p>
-          <p>
+          <p className="text-sm sm:text-base">
             We design Indian modern and traditional fashion — from easy daily wear to unforgettable
             bridal outfits — celebrating thread work, mirror work, Aari work and hand embroidery.
           </p>
-          <p>
+          <p className="text-sm sm:text-base">
             Every piece can be personalised and made to measure, because we believe beautiful
             clothing should be made for you. We bring heritage craft directly to your door.
           </p>
-          <div className="pt-4 flex flex-wrap gap-4">
-            <Link to="/contact" className="btn-primary">
+          <div className="pt-2 sm:pt-4 flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <Link to="/contact" className="btn-primary text-center">
               Contact Us via Email
             </Link>
-            <Link to="/custom-designs" className="btn-outline">
+            <Link to="/custom-designs" className="btn-outline text-center">
               Explore Custom Designs
             </Link>
           </div>
@@ -58,7 +58,7 @@ function About() {
           src={categories[6]!.image}
           alt="Hand embroidery"
           loading="lazy"
-          className="w-full aspect-[4/5] object-cover"
+          className="w-full aspect-[4/5] object-cover rounded-sm"
         />
       </div>
     </div>

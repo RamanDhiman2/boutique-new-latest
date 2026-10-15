@@ -13,4 +13,3 @@ Allow: /
 User-agent: *
 Allow: /
 
-Sitemap: https://charminngchic.com/sitemap.xml

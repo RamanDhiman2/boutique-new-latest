@@ -41,58 +41,58 @@ const steps = [
 
 function Custom() {
   return (
-    <div className="mx-auto max-w-[1500px] px-5 lg:px-10 pt-4">
+    <div className="mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-10 pt-4 pb-16">
       <SiteBreadcrumb items={[{ label: "Custom Designs" }]} />
       <PageHeader
         eyebrow="Made For You"
         title="Your design. Your measurements. Your story."
         text="Choose your preferred design, fabric, colour, embroidery and finishing details. We create personalised Indian outfits designed around your style and measurements."
       />
-      <div className="flex flex-wrap justify-center gap-3">
+      <div className="flex flex-col sm:flex-row justify-center gap-3 w-full max-w-xl mx-auto">
         <a
           href={waLink("Hi SohniMutiyaar By CC, I'd like to discuss a custom design outfit.")}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 py-3 px-6 bg-[#25D366] hover:bg-[#20ba59] text-white eyebrow !text-[0.68rem] rounded-sm transition-colors shadow-sm"
+          className="inline-flex items-center justify-center gap-2 py-3 px-6 bg-[#25D366] hover:bg-[#20ba59] text-white eyebrow !text-[0.68rem] rounded-sm transition-colors shadow-sm w-full sm:w-auto text-center"
         >
-          <WhatsAppIcon className="size-4" /> Discuss on WhatsApp
+          <WhatsAppIcon className="size-4 shrink-0" /> Discuss on WhatsApp
         </a>
-        <Link to="/contact" className="btn-primary inline-flex items-center gap-2">
-          <Mail className="size-4" /> Enquire via Email
+        <Link to="/contact" className="btn-primary inline-flex items-center justify-center gap-2 w-full sm:w-auto text-center">
+          <Mail className="size-4 shrink-0" /> Enquire via Email
         </Link>
-        <Link to="/measurements" className="btn-outline">
-          <Ruler className="size-4" /> Measurement Form
+        <Link to="/measurements" className="btn-outline inline-flex items-center justify-center gap-2 w-full sm:w-auto text-center">
+          <Ruler className="size-4 shrink-0" /> Measurement Form
         </Link>
       </div>
-      <div className="grid md:grid-cols-3 gap-3 mt-20">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mt-12 sm:mt-20">
         {categories.slice(3, 6).map((c) => (
           <img
             key={c.slug}
             src={c.image}
             alt={c.name}
             loading="lazy"
-            className="aspect-[3/4] object-cover w-full"
+            className="aspect-[3/4] object-cover w-full rounded-sm"
           />
         ))}
       </div>
-      <div className="grid md:grid-cols-2 gap-16 mt-24">
+      <div className="grid md:grid-cols-2 gap-10 md:gap-16 mt-14 sm:mt-24">
         <div>
-          <h2 className="text-4xl">What you can personalise</h2>
-          <ul className="mt-8 divide-y border-y">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif">What you can personalise</h2>
+          <ul className="mt-6 sm:mt-8 divide-y border-y">
             {options.map((o) => (
-              <li key={o} className="py-4 font-serif text-2xl">
+              <li key={o} className="py-3 sm:py-4 font-serif text-lg sm:text-2xl">
                 {o}
               </li>
             ))}
           </ul>
         </div>
         <div>
-          <h2 className="text-4xl">Your custom order journey</h2>
-          <ol className="mt-8 space-y-5">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif">Your custom order journey</h2>
+          <ol className="mt-6 sm:mt-8 space-y-4 sm:space-y-5">
             {steps.map((s, i) => (
-              <li key={s} className="flex gap-5 items-baseline">
-                <span className="font-serif text-3xl text-primary w-10">0{i + 1}</span>
-                <span className="font-serif text-2xl">{s}</span>
+              <li key={s} className="flex gap-4 sm:gap-5 items-baseline">
+                <span className="font-serif text-2xl sm:text-3xl text-primary w-8 sm:w-10 shrink-0">0{i + 1}</span>
+                <span className="font-serif text-lg sm:text-2xl">{s}</span>
               </li>
             ))}
           </ol>

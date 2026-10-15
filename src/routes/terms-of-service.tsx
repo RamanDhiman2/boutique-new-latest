@@ -14,21 +14,21 @@ export const Route = createFileRoute("/terms-of-service")({
 
 function TermsOfService() {
   return (
-    <div className="mx-auto max-w-3xl px-5 lg:px-10 pt-4 pb-24">
+    <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-10 pt-4 pb-20 sm:pb-24">
       <SiteBreadcrumb items={[{ label: "Terms of Service" }]} />
       <PageHeader eyebrow="Policies" title="Terms of Service" />
-      <div className="prose prose-stone dark:prose-invert mt-8">
+      <div className="prose prose-stone dark:prose-invert mt-6 sm:mt-8">
         <p>
           By accessing the website at SohniMutiyaar By CC, you are agreeing to be bound by these
           terms of service, all applicable laws and regulations, and agree that you are responsible
           for compliance with any applicable local laws.
         </p>
-        <h2 className="mt-8 mb-4 text-2xl">Use License</h2>
+        <h2 className="mt-6 sm:mt-8 mb-3 sm:mb-4 text-xl sm:text-2xl font-serif">Use License</h2>
         <p>
           Permission is granted to temporarily download one copy of the materials on SohniMutiyaar
           By CC's website for personal, non-commercial transitory viewing only.
         </p>
-        <h2 className="mt-8 mb-4 text-2xl">Disclaimer</h2>
+        <h2 className="mt-6 sm:mt-8 mb-3 sm:mb-4 text-xl sm:text-2xl font-serif">Disclaimer</h2>
         <p>
           The materials on SohniMutiyaar By CC's website are provided on an 'as is' basis.
           SohniMutiyaar By CC makes no warranties, expressed or implied, and hereby disclaims and
@@ -36,12 +36,12 @@ function TermsOfService() {
           conditions of merchantability, fitness for a particular purpose, or non-infringement of
           intellectual property or other violation of rights.
         </p>
-        <h2 className="mt-8 mb-4 text-2xl">Limitations</h2>
+        <h2 className="mt-6 sm:mt-8 mb-3 sm:mb-4 text-xl sm:text-2xl font-serif">Limitations</h2>
         <p>
           In no event shall SohniMutiyaar By CC or its suppliers be liable for any damages arising
           out of the use or inability to use the materials on SohniMutiyaar By CC's website.
         </p>
-        <h2 className="mt-8 mb-4 text-2xl">Contact & Enquiries</h2>
+        <h2 className="mt-6 sm:mt-8 mb-3 sm:mb-4 text-xl sm:text-2xl font-serif">Contact & Enquiries</h2>
         <p>
           For inquiries regarding our terms, please{" "}
           <Link to="/contact" className="text-primary underline hover:text-primary/80">
@@ -50,7 +50,7 @@ function TermsOfService() {
           or email us at{" "}
           <a
             href="mailto:Charminngchic@gmail.com"
-            className="text-primary underline hover:text-primary/80"
+            className="text-primary underline hover:text-primary/80 break-all"
           >
             Charminngchic@gmail.com
           </a>

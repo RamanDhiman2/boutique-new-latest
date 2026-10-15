@@ -83,12 +83,12 @@ function LoginPage() {
   };
 
   return (
-    <div className="mx-auto max-w-md px-5 pt-4 pb-40">
-      <SiteBreadcrumb items={[{ label: "Sign In" }]} className="mb-8" />
-      <h1 className="text-4xl mb-2 text-center">Welcome Back</h1>
-      <p className="text-muted-foreground text-center mb-8">Sign in to your account</p>
+    <div className="mx-auto max-w-md px-4 sm:px-6 pt-4 pb-24 sm:pb-40">
+      <SiteBreadcrumb items={[{ label: "Sign In" }]} className="mb-6 sm:mb-8" />
+      <h1 className="text-3xl sm:text-4xl mb-2 text-center font-serif">Welcome Back</h1>
+      <p className="text-xs sm:text-sm text-muted-foreground text-center mb-6 sm:mb-8">Sign in to your account</p>
 
-      <form onSubmit={handleLogin} className="space-y-6">
+      <form onSubmit={handleLogin} className="space-y-5 sm:space-y-6">
         <div className="space-y-2">
           <Label htmlFor="email">Email</Label>
           <Input
@@ -97,7 +97,7 @@ function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="py-6"
+            className="py-5 sm:py-6 text-base sm:text-sm"
             placeholder="your@email.com"
           />
         </div>
@@ -110,19 +110,19 @@ function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="py-6"
+            className="py-5 sm:py-6 text-base sm:text-sm"
             placeholder="••••••••"
           />
         </div>
 
-        <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
+        <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50 min-h-[44px] flex items-center justify-center">
           {loading ? "Signing in..." : "Sign In with Email"}
         </button>
       </form>
 
       <div className="mt-6 flex items-center justify-center space-x-4">
         <div className="h-[1px] bg-border flex-1"></div>
-        <span className="text-xs text-muted-foreground uppercase">Or continue with</span>
+        <span className="text-[11px] sm:text-xs text-muted-foreground uppercase">Or continue with</span>
         <div className="h-[1px] bg-border flex-1"></div>
       </div>
 
@@ -130,7 +130,7 @@ function LoginPage() {
         type="button"
         disabled={loading}
         onClick={handleOAuthLogin}
-        className="btn-outline w-full mt-6 flex items-center justify-center gap-3 disabled:opacity-50"
+        className="btn-outline w-full mt-6 flex items-center justify-center gap-3 disabled:opacity-50 min-h-[44px]"
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="size-5">
           <path

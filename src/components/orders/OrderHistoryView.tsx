@@ -165,7 +165,7 @@ export function OrderHistoryView({ orders, onOrderCancelled }: OrderHistoryViewP
       doc.setFont("helvetica", "normal");
       doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
-      doc.text("By Charming Chic · Luxury Indian Fashion & Tailoring", 14, 28);
+      doc.text("By Charminng Chic · Luxury Indian Fashion & Tailoring", 14, 28);
       doc.text("Email: Charminngchic@gmail.com | WhatsApp: +44 7393 070421", 14, 33);
 
       // Invoice Title & Meta
@@ -663,7 +663,7 @@ export function OrderHistoryView({ orders, onOrderCancelled }: OrderHistoryViewP
                         </div>
 
                         {/* Item Quick Actions */}
-                        <div className="flex sm:flex-col gap-2 w-full sm:w-auto shrink-0 justify-end">
+                        <div className="flex flex-row sm:flex-col gap-2 w-full sm:w-auto shrink-0 justify-start sm:justify-end mt-1 sm:mt-0">
                           <button
                             onClick={() => handleBuyAgain(item)}
                             className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-sm bg-foreground text-background hover:bg-black text-[11px] font-semibold uppercase tracking-wider transition-colors"
@@ -694,18 +694,18 @@ export function OrderHistoryView({ orders, onOrderCancelled }: OrderHistoryViewP
                 )}
 
                 {/* BOTTOM ACTION BAR */}
-                <div className="bg-[#FAF9F6] px-4 md:px-6 py-3.5 border-t border-black/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="bg-[#FAF9F6] px-4 md:px-6 py-3.5 border-t border-black/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs">
                   {/* Track Order Toggle */}
                   <button
                     onClick={() => setExpandedTrackingId(isTrackingOpen ? null : order.id)}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-black/20 hover:border-black/40 bg-white rounded-sm font-semibold uppercase tracking-wider text-[11px] text-foreground transition-all shadow-xs"
+                    className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border border-black/20 hover:border-black/40 bg-white rounded-sm font-semibold uppercase tracking-wider text-[11px] text-foreground transition-all shadow-xs"
                   >
                     <span>{isTrackingOpen ? "Hide Tracking" : "Track Order"}</span>
                     {isTrackingOpen ? <ChevronUp className="size-3.5" /> : <ChevronDown className="size-3.5" />}
                   </button>
 
                   {/* Right Side Buttons */}
-                  <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-3 sm:gap-4 flex-wrap justify-between sm:justify-end">
                     {/* Invoice Download */}
                     <button
                       onClick={() => handleExportInvoice(order)}

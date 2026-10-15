@@ -30,24 +30,24 @@ function Shipping() {
     ],
   ];
   return (
-    <div className="mx-auto max-w-3xl px-5 pt-4 pb-20">
+    <div className="mx-auto max-w-3xl px-4 sm:px-6 pt-4 pb-20">
       <SiteBreadcrumb items={[{ label: "Worldwide Shipping" }]} />
       <PageHeader eyebrow="Customer Care" title="Worldwide Shipping" />
       <div className="divide-y border-y">
         {items.map(([t, d]) => (
-          <div key={t} className="py-8">
-            <h2 className="text-3xl">{t}</h2>
-            <p className="mt-3 text-muted-foreground">{d}</p>
+          <div key={t} className="py-6 sm:py-8">
+            <h2 className="text-2xl sm:text-3xl font-serif">{t}</h2>
+            <p className="mt-2 sm:mt-3 text-sm sm:text-base text-muted-foreground">{d}</p>
           </div>
         ))}
       </div>
-      <div className="mt-12 p-8 bg-secondary/30 rounded border text-center">
-        <h3 className="text-2xl font-serif mb-2">Have questions about shipping?</h3>
-        <p className="text-muted-foreground mb-6 text-sm">
+      <div className="mt-8 sm:mt-12 p-5 sm:p-8 bg-secondary/30 rounded border text-center">
+        <h3 className="text-xl sm:text-2xl font-serif mb-2">Have questions about shipping?</h3>
+        <p className="text-muted-foreground mb-6 text-xs sm:text-sm">
           Our team is here to assist you with order tracking, custom delivery timelines, or general
           enquiries.
         </p>
-        <Link to="/contact" className="btn-primary inline-block">
+        <Link to="/contact" className="btn-primary inline-flex items-center justify-center w-full sm:w-auto">
           Contact Us via Email
         </Link>
       </div>

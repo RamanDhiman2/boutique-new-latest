@@ -470,41 +470,41 @@ function ProfilePage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1500px] px-5 lg:px-10 pt-4 pb-20">
+    <div className="mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-10 pt-4 pb-20">
       <SiteBreadcrumb items={[{ label: "My Account" }]} />
-      <h1 className="text-4xl mt-6 mb-2">My Account</h1>
-      <p className="text-muted-foreground mb-10">
+      <h1 className="text-3xl sm:text-4xl mt-4 sm:mt-6 mb-2">My Account</h1>
+      <p className="text-xs sm:text-sm text-muted-foreground mb-6 sm:mb-10">
         Welcome back, {user.user_metadata?.["full_name"] || user.email}
       </p>
 
-      <div className="grid md:grid-cols-4 gap-10">
-        <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 lg:gap-10">
+        <div className="flex md:flex-col overflow-x-auto gap-2 no-scrollbar pb-2 md:pb-0">
           <button
             onClick={() => setActiveTab("dashboard")}
-            className={`block w-full text-left p-4 ${activeTab === "dashboard" ? "bg-muted font-medium" : "hover:bg-muted transition-colors"}`}
+            className={`whitespace-nowrap px-4 py-3 text-xs sm:text-sm rounded-sm text-left ${activeTab === "dashboard" ? "bg-muted font-medium" : "hover:bg-muted transition-colors"}`}
           >
             Dashboard
           </button>
           <button
             onClick={() => setActiveTab("orders")}
-            className={`block w-full text-left p-4 ${activeTab === "orders" ? "bg-muted font-medium" : "hover:bg-muted transition-colors"}`}
+            className={`whitespace-nowrap px-4 py-3 text-xs sm:text-sm rounded-sm text-left ${activeTab === "orders" ? "bg-muted font-medium" : "hover:bg-muted transition-colors"}`}
           >
             Order History
           </button>
           <button
             onClick={() => setActiveTab("addresses")}
-            className={`block w-full text-left p-4 ${activeTab === "addresses" ? "bg-muted font-medium" : "hover:bg-muted transition-colors"}`}
+            className={`whitespace-nowrap px-4 py-3 text-xs sm:text-sm rounded-sm text-left ${activeTab === "addresses" ? "bg-muted font-medium" : "hover:bg-muted transition-colors"}`}
           >
             Addresses
           </button>
           <button
             onClick={handleLogout}
-            className="block w-full text-left p-4 hover:bg-muted transition-colors text-destructive"
+            className="whitespace-nowrap px-4 py-3 text-xs sm:text-sm rounded-sm text-left hover:bg-muted transition-colors text-destructive"
           >
             Logout
           </button>
         </div>
-        <div className="md:col-span-3 border p-10">
+        <div className="md:col-span-3 border p-4 sm:p-6 md:p-10 rounded-sm bg-card">
           {activeTab === "dashboard" && (
             <>
               <h2 className="text-2xl mb-6">Dashboard</h2>
@@ -620,15 +620,15 @@ function ProfilePage() {
 
           {activeTab === "addresses" && (
             <>
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
                 <div>
-                  <h2 className="text-2xl font-serif">Saved Addresses</h2>
-                  <p className="text-sm text-muted-foreground mt-0.5">Manage your delivery and billing addresses</p>
+                  <h2 className="text-xl sm:text-2xl font-serif">Saved Addresses</h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Manage your delivery and billing addresses</p>
                 </div>
                 {!isAddingAddress && (
                   <button
                     onClick={startAddAddress}
-                    className="btn-primary !py-2 !px-4 !text-xs flex items-center gap-1.5"
+                    className="btn-primary !py-2.5 !px-4 !text-xs flex items-center justify-center gap-1.5 w-full sm:w-auto"
                   >
                     <Plus className="size-3.5" />
                     + Add New Address
@@ -639,11 +639,11 @@ function ProfilePage() {
               {(isAddingAddress || editingAddress) && (
                 <div
                   ref={addressFormRef as any}
-                  className="border p-6 md:p-8 rounded-lg mb-8 bg-card shadow-sm max-w-2xl transition-all"
+                  className="border p-4 sm:p-6 md:p-8 rounded-lg mb-8 bg-card shadow-sm max-w-2xl transition-all"
                 >
                   <div className="flex items-center justify-between pb-4 mb-6 border-b">
                     <div>
-                      <h3 className="font-serif font-medium text-xl">
+                      <h3 className="font-serif font-medium text-lg sm:text-xl">
                         {editingAddress ? `Edit Address` : "Add New Delivery Address"}
                       </h3>
                       <p className="text-xs text-muted-foreground mt-0.5">
@@ -667,19 +667,19 @@ function ProfilePage() {
               )}
 
               {!addresses?.length ? (
-                <div className="p-8 border rounded-lg text-center bg-card">
-                  <p className="text-muted-foreground mb-4">You haven't saved any addresses yet.</p>
+                <div className="p-6 sm:p-8 border rounded-lg text-center bg-card">
+                  <p className="text-sm text-muted-foreground mb-4">You haven't saved any addresses yet.</p>
                   {!isAddingAddress && (
                     <button
                       onClick={startAddAddress}
-                      className="btn-primary !py-2 !px-4 !text-xs"
+                      className="btn-primary !py-2.5 !px-4 !text-xs w-full sm:w-auto"
                     >
                       + Add Your First Address
                     </button>
                   )}
                 </div>
               ) : (
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   {addresses.map((address) => {
                     const isCurrentlyEditing = editingAddress?.id === address.id;
                     const isDeletingThis = deletingAddressId === address.id;

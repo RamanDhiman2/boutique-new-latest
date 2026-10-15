@@ -14,27 +14,27 @@ export const Route = createFileRoute("/privacy-policy")({
 
 function PrivacyPolicy() {
   return (
-    <div className="mx-auto max-w-3xl px-5 lg:px-10 pt-4 pb-24">
+    <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-10 pt-4 pb-20 sm:pb-24">
       <SiteBreadcrumb items={[{ label: "Privacy Policy" }]} />
       <PageHeader eyebrow="Policies" title="Privacy Policy" />
-      <div className="prose prose-stone dark:prose-invert mt-8">
+      <div className="prose prose-stone dark:prose-invert mt-6 sm:mt-8">
         <p>
           Your privacy is important to us. It is SohniMutiyaar By CC's policy to respect your
           privacy regarding any information we may collect from you across our website.
         </p>
-        <h2 className="mt-8 mb-4 text-2xl">Information we collect</h2>
+        <h2 className="mt-6 sm:mt-8 mb-3 sm:mb-4 text-xl sm:text-2xl font-serif">Information we collect</h2>
         <p>
           We only ask for personal information when we truly need it to provide a service to you. We
           collect it by fair and lawful means, with your knowledge and consent.
         </p>
-        <h2 className="mt-8 mb-4 text-2xl">Use of information</h2>
+        <h2 className="mt-6 sm:mt-8 mb-3 sm:mb-4 text-xl sm:text-2xl font-serif">Use of information</h2>
         <p>
           We only retain collected information for as long as necessary to provide you with your
           requested service. What data we store, we’ll protect within commercially acceptable means
           to prevent loss and theft, as well as unauthorised access, disclosure, copying, use or
           modification.
         </p>
-        <h2 className="mt-8 mb-4 text-2xl">Contact us</h2>
+        <h2 className="mt-6 sm:mt-8 mb-3 sm:mb-4 text-xl sm:text-2xl font-serif">Contact us</h2>
         <p>
           If you have any questions about how we handle user data and personal information, feel
           free to{" "}
@@ -44,7 +44,7 @@ function PrivacyPolicy() {
           or email us at{" "}
           <a
             href="mailto:Charminngchic@gmail.com"
-            className="text-primary underline hover:text-primary/80"
+            className="text-primary underline hover:text-primary/80 break-all"
           >
             Charminngchic@gmail.com
           </a>

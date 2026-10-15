@@ -468,9 +468,9 @@ function MeasurementsPage() {
       <div className="max-w-[1400px] mx-auto w-full px-4 sm:px-6 lg:px-8 pt-4">
         <SiteBreadcrumb items={[{ label: "Measurements" }]} />
       </div>
-      <div className="pt-8 pb-8 text-center px-4">
-        <h1 className="font-serif text-4xl md:text-5xl text-stone-900 mb-4">Measurements</h1>
-        <p className="text-sm text-stone-500 max-w-2xl mx-auto">
+      <div className="pt-6 sm:pt-8 pb-6 sm:pb-8 text-center px-4">
+        <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl text-stone-900 mb-2 sm:mb-4">Measurements</h1>
+        <p className="text-xs sm:text-sm text-stone-500 max-w-2xl mx-auto">
           Enter your bespoke Punjabi suit tailoring specifications below ({measurements.unit}).
           Values update the real-time garment blueprint dynamically on the right.
         </p>
@@ -485,23 +485,23 @@ function MeasurementsPage() {
               className="inline-flex items-center gap-1 text-[#741B2B] hover:text-[#5C1421] font-semibold transition-colors"
             >
               <BookOpen className="w-4 h-4" />
-              <span className="text-sm">How to Measure Guide</span>
+              <span className="text-xs sm:text-sm">How to Measure Guide</span>
             </button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
             <div className="flex items-center bg-white border border-stone-200 rounded-xl p-1 shadow-sm">
               <button
                 type="button"
                 onClick={() => handleToggleUnit("inches")}
-                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${measurements.unit === "inches" ? "bg-[#741B2B] text-white" : "text-stone-600 hover:text-stone-900"}`}
+                className={`px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-lg transition-all ${measurements.unit === "inches" ? "bg-[#741B2B] text-white" : "text-stone-600 hover:text-stone-900"}`}
               >
                 Inches (in)
               </button>
               <button
                 type="button"
                 onClick={() => handleToggleUnit("cm")}
-                className={`px-3 py-1 text-xs font-semibold rounded-lg transition-all ${measurements.unit === "cm" ? "bg-[#741B2B] text-white" : "text-stone-600 hover:text-stone-900"}`}
+                className={`px-2.5 sm:px-3 py-1 text-xs font-semibold rounded-lg transition-all ${measurements.unit === "cm" ? "bg-[#741B2B] text-white" : "text-stone-600 hover:text-stone-900"}`}
               >
                 Centimeters (cm)
               </button>
@@ -515,7 +515,7 @@ function MeasurementsPage() {
                   key={sz}
                   type="button"
                   onClick={() => handleApplyPreset(sz)}
-                  className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${selectedPreset === sz ? "bg-[#B84A39] text-white" : "text-stone-600 hover:text-stone-900"}`}
+                  className={`px-2 sm:px-2.5 py-1 rounded-lg font-semibold transition-all ${selectedPreset === sz ? "bg-[#B84A39] text-white" : "text-stone-600 hover:text-stone-900"}`}
                 >
                   {sz}
                 </button>
@@ -538,7 +538,7 @@ function MeasurementsPage() {
               {rows.map((rowItems, rowIndex) => (
                 <div
                   key={`row-${rowIndex}`}
-                  className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4"
+                  className="grid grid-cols-1 min-[440px]:grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4"
                 >
                   {rowItems.map((config) => (
                     <div id={`metric-card-${config.key}`} key={config.key}>

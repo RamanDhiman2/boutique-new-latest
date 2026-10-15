@@ -25,14 +25,14 @@ export function WhatsAppFloatingButton({
   return (
     <aside
       aria-label="WhatsApp enquiry"
-      className="fixed bottom-6 right-6 z-50 flex items-center group pointer-events-auto"
+      className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 flex items-center group pointer-events-auto"
     >
       <a
         href={waLink(message)}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat on WhatsApp"
-        className="flex items-center gap-2.5 bg-[#25D366] hover:bg-[#20ba59] text-white px-4 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95"
+        className="flex items-center gap-2.5 bg-[#25D366] hover:bg-[#20ba59] text-white p-3.5 sm:px-4 sm:py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 active:scale-95 min-w-[48px] min-h-[48px] justify-center"
       >
         <WhatsAppIcon className="size-6 text-white shrink-0" />
         <span className="font-sans text-xs uppercase tracking-wider font-semibold whitespace-nowrap pr-1 hidden sm:inline-block">
@@ -61,7 +61,7 @@ export function WhatsAppEnquiryButton({
       target="_blank"
       rel="noopener noreferrer"
       className={cn(
-        "inline-flex items-center justify-center gap-2 py-3.5 px-6 bg-[#25D366] hover:bg-[#20ba59] text-white font-medium text-xs uppercase tracking-wider rounded-sm shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.99]",
+        "inline-flex items-center justify-center gap-2 py-3.5 px-6 min-h-[44px] bg-[#25D366] hover:bg-[#20ba59] text-white font-medium text-xs uppercase tracking-wider rounded-sm shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.99] text-center",
         className,
       )}
     >

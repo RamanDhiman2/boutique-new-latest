@@ -145,32 +145,32 @@ function OrderSuccessPage() {
   }, [order, isCaptured, order_id]);
 
   return (
-    <div className="mx-auto max-w-5xl px-5 pt-4 pb-20">
+    <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-4 pb-20">
       <SiteBreadcrumb
         items={[{ label: "Checkout", to: "/checkout" }, { label: "Order Confirmation" }]}
       />
-      <div className="min-h-[50vh] flex flex-col items-center justify-center px-5 text-center mt-6">
+      <div className="min-h-[50vh] flex flex-col items-center justify-center px-4 text-center mt-6">
         {isCaptured ? (
           <>
-            <CheckCircle2 className="size-20 text-emerald-600 mb-6" />
-            <h1 className="text-4xl md:text-5xl mb-3 font-serif">Payment Verified & Order Confirmed!</h1>
-            <p className="text-muted-foreground text-lg max-w-lg mb-6">
+            <CheckCircle2 className="size-16 sm:size-20 text-emerald-600 mb-4 sm:mb-6" />
+            <h1 className="text-2xl sm:text-3xl md:text-5xl mb-3 font-serif">Payment Verified & Order Confirmed!</h1>
+            <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-lg mb-6">
               Thank you for shopping with Sohni Mutiyaar. Your payment has been securely authorized and captured via Stripe. Your bespoke couture order is now in production.
             </p>
           </>
         ) : isFailed ? (
           <>
-            <AlertCircle className="size-20 text-red-600 mb-6" />
-            <h1 className="text-4xl md:text-5xl mb-3 font-serif">Payment Authorization Failed</h1>
-            <p className="text-muted-foreground text-lg max-w-lg mb-6">
+            <AlertCircle className="size-16 sm:size-20 text-red-600 mb-4 sm:mb-6" />
+            <h1 className="text-2xl sm:text-3xl md:text-5xl mb-3 font-serif">Payment Authorization Failed</h1>
+            <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-lg mb-6">
               Your payment could not be captured by the gateway. No funds were debited. Please return to checkout to retry with a valid payment card.
             </p>
           </>
         ) : (
           <>
-            <Clock className="size-20 text-amber-600 mb-6 animate-pulse" />
-            <h1 className="text-4xl md:text-5xl mb-3 font-serif">Payment Processing...</h1>
-            <p className="text-muted-foreground text-lg max-w-lg mb-6">
+            <Clock className="size-16 sm:size-20 text-amber-600 mb-4 sm:mb-6 animate-pulse" />
+            <h1 className="text-2xl sm:text-3xl md:text-5xl mb-3 font-serif">Payment Processing...</h1>
+            <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-lg mb-6">
               Your payment has been submitted securely to Stripe. We are awaiting authoritative confirmation from the payment gateway to finalize your order. This page updates automatically.
             </p>
           </>

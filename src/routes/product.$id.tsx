@@ -143,9 +143,9 @@ function ProductPage() {
   };
 
   return (
-    <div className="mx-auto max-w-[1500px] px-5 lg:px-10 pt-6 pb-20">
+    <div className="mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-10 pt-4 sm:pt-6 pb-16 sm:pb-20">
       <SiteBreadcrumb
-        className="mb-6"
+        className="mb-4 sm:mb-6"
         items={[
           { label: "Shop", to: "/shop" },
           { label: cat.name, to: "/collections/$slug", params: { slug: cat.slug } },
@@ -153,10 +153,10 @@ function ProductPage() {
         ]}
       />
 
-      <div className="grid lg:grid-cols-[1.25fr_1fr] gap-10 lg:gap-16">
+      <div className="grid lg:grid-cols-[1.2fr_1fr] xl:grid-cols-[1.25fr_1fr] gap-8 lg:gap-14 xl:gap-16">
         {/* Gallery Section */}
-        <div className="flex flex-col-reverse lg:flex-row gap-4">
-          <div className="flex lg:flex-col gap-3 overflow-x-auto w-full lg:w-24 shrink-0 no-scrollbar">
+        <div className="flex flex-col-reverse lg:flex-row gap-3 sm:gap-4">
+          <div className="flex lg:flex-col gap-2 sm:gap-3 overflow-x-auto w-full lg:w-24 shrink-0 pb-1 lg:pb-0 no-scrollbar">
             {p.images.map((src, i) => (
               <button
                 key={i}
@@ -171,7 +171,7 @@ function ProductPage() {
                 <img
                   src={src}
                   alt={`${p.name} view ${i + 1}`}
-                  className="w-20 lg:w-full aspect-[3/4] object-cover object-[center_20%]"
+                  className="w-14 sm:w-16 lg:w-full aspect-[3/4] object-cover object-[center_20%]"
                 />
               </button>
             ))}
@@ -186,29 +186,29 @@ function ProductPage() {
         </div>
 
         {/* Product Details & Ordering Section */}
-        <div className="lg:sticky lg:top-32 self-start animate-rise">
+        <div className="lg:sticky lg:top-28 self-start animate-rise">
           <div className="flex flex-wrap items-center gap-2">
             {p.soldOut && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1A1A1A] text-white text-[0.62rem] tracking-wider uppercase font-semibold border border-white/20">
+              <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-[#1A1A1A] text-white text-[0.6rem] sm:text-[0.62rem] tracking-wider uppercase font-semibold border border-white/20">
                 Sold Out
               </div>
             )}
             {p.isUpcoming && (
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary text-[0.62rem] tracking-wider uppercase font-semibold border border-primary/20">
+              <div className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full bg-primary/10 text-primary text-[0.6rem] sm:text-[0.62rem] tracking-wider uppercase font-semibold border border-primary/20">
                 <Sparkles className="size-3" /> Upcoming Release · Coming Soon
               </div>
             )}
             {p.customisable && (
-              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[0.62rem] tracking-wider uppercase font-medium">
+              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-primary/10 text-primary text-[0.6rem] sm:text-[0.62rem] tracking-wider uppercase font-medium">
                 <Sparkles className="size-3" /> Customisation Available
               </div>
             )}
           </div>
 
-          <h1 className="mt-3 text-4xl lg:text-5xl font-serif text-foreground leading-tight">{p.name}</h1>
+          <h1 className="mt-2.5 sm:mt-3 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-serif text-foreground leading-tight break-words">{p.name}</h1>
           
-          <div className="mt-3 flex items-baseline gap-3">
-            <span className="text-3xl font-medium tracking-tight text-foreground">{gbp(p.price)}</span>
+          <div className="mt-2.5 sm:mt-3 flex items-baseline gap-3 flex-wrap">
+            <span className="text-2xl sm:text-3xl font-medium tracking-tight text-foreground">{gbp(p.price)}</span>
             {p.soldOut ? (
               <span className="text-xs font-semibold text-destructive uppercase tracking-wider bg-destructive/10 px-2 py-0.5 rounded">
                 Currently Sold Out
@@ -225,26 +225,26 @@ function ProductPage() {
           </div>
 
           {/* Quick Overview Badges (Amazon/Flipkart Style Trust Badges) */}
-          <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-2.5 p-3.5 bg-card border border-border/70 rounded-xs text-center">
-            <div className="flex flex-col items-center justify-center p-1.5">
+          <div className="mt-5 sm:mt-6 grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5 p-2.5 sm:p-3.5 bg-card border border-border/70 rounded-xs text-center">
+            <div className="flex flex-col items-center justify-center p-1 sm:p-1.5">
               <Scissors className="size-4 text-primary mb-1" />
-              <span className="text-[0.65rem] font-medium text-foreground">Made to Measure</span>
-              <span className="text-[0.58rem] text-muted-foreground">Tailored for you</span>
+              <span className="text-[0.62rem] sm:text-[0.65rem] font-medium text-foreground">Made to Measure</span>
+              <span className="text-[0.55rem] sm:text-[0.58rem] text-muted-foreground">Tailored for you</span>
             </div>
-            <div className="flex flex-col items-center justify-center p-1.5">
+            <div className="flex flex-col items-center justify-center p-1 sm:p-1.5">
               <Sparkles className="size-4 text-primary mb-1" />
-              <span className="text-[0.65rem] font-medium text-foreground">Artisan Handwork</span>
-              <span className="text-[0.58rem] text-muted-foreground">Original embroidery</span>
+              <span className="text-[0.62rem] sm:text-[0.65rem] font-medium text-foreground">Artisan Handwork</span>
+              <span className="text-[0.55rem] sm:text-[0.58rem] text-muted-foreground">Original embroidery</span>
             </div>
-            <div className="flex flex-col items-center justify-center p-1.5">
+            <div className="flex flex-col items-center justify-center p-1 sm:p-1.5">
               <Truck className="size-4 text-primary mb-1" />
-              <span className="text-[0.65rem] font-medium text-foreground">Worldwide Delivery</span>
-              <span className="text-[0.58rem] text-muted-foreground">Direct to your door</span>
+              <span className="text-[0.62rem] sm:text-[0.65rem] font-medium text-foreground">Worldwide Delivery</span>
+              <span className="text-[0.55rem] sm:text-[0.58rem] text-muted-foreground">Direct to your door</span>
             </div>
-            <div className="flex flex-col items-center justify-center p-1.5">
+            <div className="flex flex-col items-center justify-center p-1 sm:p-1.5">
               <ShieldCheck className="size-4 text-primary mb-1" />
-              <span className="text-[0.65rem] font-medium text-foreground">Secure Checkout</span>
-              <span className="text-[0.58rem] text-muted-foreground">Encrypted processing</span>
+              <span className="text-[0.62rem] sm:text-[0.65rem] font-medium text-foreground">Secure Checkout</span>
+              <span className="text-[0.55rem] sm:text-[0.58rem] text-muted-foreground">Encrypted processing</span>
             </div>
           </div>
 

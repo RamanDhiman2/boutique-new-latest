@@ -49,40 +49,53 @@ function Bag() {
           </Link>
         </div>
       ) : (
-        <div className="grid md:grid-cols-[1fr_350px] gap-12">
+        <div className="grid md:grid-cols-[1fr_320px] lg:grid-cols-[1fr_350px] gap-8 lg:gap-12">
           <div>
             <div className="flex items-center gap-3 pb-4 border-b">
               <input
                 type="checkbox"
-                className="size-4"
+                className="size-4 rounded-xs accent-primary cursor-pointer"
                 checked={allSelected}
                 onChange={(e) => selectAll(e.target.checked)}
               />
               <span className="text-sm font-medium">Select All Items</span>
             </div>
-            <ul className="divide-y">
+            <ul className="divide-y divide-border/60">
               {lines.map((l) => (
-                <li key={l.id + l.size} className={`py-6 flex gap-6 items-center ${l.product.soldOut || l.product.isUpcoming ? "opacity-75" : ""}`}>
-                  <input
-                    type="checkbox"
-                    className="size-4 shrink-0"
-                    disabled={l.product.soldOut || l.product.isUpcoming}
-                    checked={!l.product.soldOut && !l.product.isUpcoming && (l.selected ?? true)}
-                    onChange={() => !l.product.soldOut && !l.product.isUpcoming && toggleSelect(l.id, l.size)}
-                  />
-                  <img
-                    src={l.product.images[0]}
-                    alt=""
-                    className="w-24 aspect-[3/4] object-cover"
-                  />
-                  <div className="flex-1 flex flex-col justify-between self-stretch py-1">
+                <li key={l.id + l.size} className={`py-4 sm:py-6 flex flex-col min-[480px]:flex-row gap-3 sm:gap-6 items-start min-[480px]:items-center ${l.product.soldOut || l.product.isUpcoming ? "opacity-75" : ""}`}>
+                  <div className="flex items-center gap-3 w-full min-[480px]:w-auto">
+                    <input
+                      type="checkbox"
+                      className="size-4 shrink-0 rounded-xs accent-primary cursor-pointer"
+                      disabled={l.product.soldOut || l.product.isUpcoming}
+                      checked={!l.product.soldOut && !l.product.isUpcoming && (l.selected ?? true)}
+                      onChange={() => !l.product.soldOut && !l.product.isUpcoming && toggleSelect(l.id, l.size)}
+                    />
+                    <img
+                      src={l.product.images[0]}
+                      alt=""
+                      className="w-16 sm:w-24 aspect-[3/4] object-cover rounded-xs border border-border/50 shrink-0"
+                    />
+                    <div className="min-[480px]:hidden flex-1 min-w-0">
+                      <Link
+                        to="/product/$id"
+                        params={{ id: l.id }}
+                        className="font-serif text-lg hover:text-primary transition-colors block truncate"
+                      >
+                        {l.product.name}
+                      </Link>
+                      <div className="text-xs text-muted-foreground mt-0.5">Size: {l.size}</div>
+                      <div className="text-sm font-medium mt-1">{gbp(l.product.price)}</div>
+                    </div>
+                  </div>
+                  <div className="flex-1 w-full min-[480px]:w-auto flex flex-col justify-between self-stretch py-1">
                     <div>
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="hidden min-[480px]:flex items-center gap-2 flex-wrap">
                           <Link
                             to="/product/$id"
                             params={{ id: l.id }}
-                            className="font-serif text-2xl hover:text-primary transition-colors"
+                            className="font-serif text-xl sm:text-2xl hover:text-primary transition-colors"
                           >
                             {l.product.name}
                           </Link>
@@ -99,32 +112,34 @@ function Bag() {
                         </div>
                         <button
                           onClick={() => remove(l.id, l.size)}
-                          aria-label="Remove"
-                          className="p-1 hover:text-destructive"
+                          aria-label="Remove item"
+                          className="p-1.5 -mr-1.5 hover:text-destructive min-h-[40px] min-w-[40px] flex items-center justify-center ml-auto"
                         >
-                          <X className="size-5" />
+                          <X className="size-4 sm:size-5" />
                         </button>
                       </div>
-                      <div className="text-sm text-muted-foreground mt-1">Size: {l.size}</div>
-                      <div className="mt-2 text-lg">{gbp(l.product.price)}</div>
+                      <div className="hidden min-[480px]:block text-sm text-muted-foreground mt-1">Size: {l.size}</div>
+                      <div className="hidden min-[480px]:block mt-2 text-lg font-medium">{gbp(l.product.price)}</div>
                     </div>
-                    <div className="flex justify-between items-end mt-4">
-                      <div className="flex items-center border border-input rounded-sm">
+                    <div className="flex justify-between items-center mt-3 sm:mt-4 pt-2 border-t min-[480px]:border-t-0 border-border/40">
+                      <div className="flex items-center border border-input rounded-sm bg-background">
                         <button
                           onClick={() => updateQty(l.id, l.size, l.qty - 1)}
-                          className="px-3 py-1 hover:bg-muted"
+                          aria-label="Decrease quantity"
+                          className="px-3 py-1.5 hover:bg-muted min-h-[36px] min-w-[36px] flex items-center justify-center font-medium"
                         >
                           -
                         </button>
-                        <span className="px-3 py-1 text-sm">{l.qty}</span>
+                        <span className="px-3 py-1.5 text-xs sm:text-sm font-semibold">{l.qty}</span>
                         <button
                           onClick={() => updateQty(l.id, l.size, l.qty + 1)}
-                          className="px-3 py-1 hover:bg-muted"
+                          aria-label="Increase quantity"
+                          className="px-3 py-1.5 hover:bg-muted min-h-[36px] min-w-[36px] flex items-center justify-center font-medium"
                         >
                           +
                         </button>
                       </div>
-                      <div className="font-medium text-lg">
+                      <div className="font-semibold text-sm sm:text-lg">
                         Total: {gbp(l.product.price * l.qty)}
                       </div>
                     </div>
@@ -133,9 +148,9 @@ function Bag() {
               ))}
             </ul>
           </div>
-          <div className="bg-secondary/50 p-8 self-start border rounded-sm">
-            <h3 className="font-serif text-2xl mb-6">Order Summary</h3>
-            <div className="text-sm mb-4 text-muted-foreground">
+          <div className="bg-secondary/50 p-5 sm:p-8 self-start border rounded-sm">
+            <h3 className="font-serif text-xl sm:text-2xl mb-4 sm:mb-6">Order Summary</h3>
+            <div className="text-xs sm:text-sm mb-4 text-muted-foreground">
               Selected Items: {checkoutLines.length}
             </div>
             <div className="flex justify-between mb-4">

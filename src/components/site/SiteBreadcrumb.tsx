@@ -24,9 +24,9 @@ export interface SiteBreadcrumbProps {
 export function SiteBreadcrumb({ items, className }: SiteBreadcrumbProps) {
   return (
     <Breadcrumb
-      className={cn("py-3 text-[11px] uppercase tracking-wider text-muted-foreground", className)}
+      className={cn("py-2.5 sm:py-3 text-[10px] sm:text-[11px] uppercase tracking-wider text-muted-foreground", className)}
     >
-      <BreadcrumbList className="gap-1 sm:gap-1.5">
+      <BreadcrumbList className="flex-wrap gap-1 sm:gap-1.5">
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
             <Link to="/" className="hover:text-primary transition-colors">
@@ -39,10 +39,10 @@ export function SiteBreadcrumb({ items, className }: SiteBreadcrumbProps) {
           const isLast = idx === items.length - 1;
           return (
             <React.Fragment key={`${item.label}-${idx}`}>
-              <BreadcrumbSeparator className="text-muted-foreground/30 [&>svg]:size-3" />
-              <BreadcrumbItem>
+              <BreadcrumbSeparator className="text-muted-foreground/30 [&>svg]:size-3 shrink-0" />
+              <BreadcrumbItem className="max-w-[180px] sm:max-w-none">
                 {isLast || !item.to ? (
-                  <BreadcrumbPage className="font-medium text-foreground tracking-wider">
+                  <BreadcrumbPage className="font-medium text-foreground tracking-wider truncate sm:overflow-visible block">
                     {item.label}
                   </BreadcrumbPage>
                 ) : (
