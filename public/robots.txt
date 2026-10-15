@@ -13,3 +13,7 @@ Allow: /
 User-agent: *
 Allow: /
 
+# Automated Sitemap Directive
+
+# Automated Sitemap Directive
+Sitemap: https://charminngchic.com/sitemap.xml
