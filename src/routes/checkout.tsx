@@ -194,7 +194,7 @@ function CheckoutPage() {
   useEffect(() => {
     if (!loading && !user) {
       toast.error("Please login to proceed to checkout");
-      navigate({ to: "/login" });
+      navigate({ to: "/login", search: { redirect: "/checkout" } });
     }
   }, [user, loading, navigate]);
 

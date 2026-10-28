@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { rememberPostLoginPath, safeInternalPath, takePostLoginPath } from "@/lib/authRedirect";
 import { useState, useEffect } from "react";
 import { supabase, getAuthRedirectUrl } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
@@ -8,6 +9,10 @@ import { Label } from "@/components/ui/label";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
 
 export const Route = createFileRoute("/register")({
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
+    const redirect = safeInternalPath(search["redirect"]);
+    return redirect ? { redirect } : {};
+  },
   component: RegisterPage,
 });
 
@@ -18,15 +23,25 @@ function RegisterPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
+
+  // Remember where to return after sign-in (also survives the Google round trip)
+  useEffect(() => {
+    rememberPostLoginPath(redirect);
+  }, [redirect]);
 
   useEffect(() => {
     if (!authLoading && user) {
-      navigate({ to: "/profile" });
+      navigate({ href: takePostLoginPath() ?? "/profile" });
     }
   }, [user, authLoading, navigate]);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password.length < 8 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+      toast.error("Please use at least 8 characters, including a letter and a number.");
+      return;
+    }
     setLoading(true);
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -47,9 +62,14 @@ function RegisterPage() {
       } else {
         toast.error(msg);
       }
+    } else if (!data?.session) {
+      // Email confirmation is on: no session until the link in the email is clicked
+      toast.success(
+        "Account created! Please check your email to confirm your address, then sign in.",
+      );
     } else {
+      // The signed-in effect above sends the customer on
       toast.success("Account created successfully!");
-      navigate({ to: "/" });
     }
     setLoading(false);
   };
@@ -92,7 +112,9 @@ function RegisterPage() {
     <div className="mx-auto max-w-md px-4 sm:px-6 pt-4 pb-24 sm:pb-40">
       <SiteBreadcrumb items={[{ label: "Create Account" }]} className="mb-6 sm:mb-8" />
       <h1 className="text-3xl sm:text-4xl mb-2 text-center font-serif">Create Account</h1>
-      <p className="text-xs sm:text-sm text-muted-foreground text-center mb-6 sm:mb-8">Join us for a premium experience</p>
+      <p className="text-xs sm:text-sm text-muted-foreground text-center mb-6 sm:mb-8">
+        Join us for a premium experience
+      </p>
 
       <form onSubmit={handleRegister} className="space-y-5 sm:space-y-6">
         <div className="space-y-2">
@@ -129,19 +151,30 @@ function RegisterPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            minLength={8}
+            autoComplete="new-password"
             className="py-5 sm:py-6 text-base sm:text-sm"
             placeholder="••••••••"
           />
+          <p className="text-[11px] text-muted-foreground">
+            At least 8 characters, with a letter and a number.
+          </p>
         </div>
 
-        <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50 min-h-[44px] flex items-center justify-center">
+        <button
+          type="submit"
+          disabled={loading}
+          className="btn-primary w-full disabled:opacity-50 min-h-[44px] flex items-center justify-center"
+        >
           {loading ? "Creating account..." : "Create Account"}
         </button>
       </form>
 
       <div className="mt-6 flex items-center justify-center space-x-4">
         <div className="h-[1px] bg-border flex-1"></div>
-        <span className="text-[11px] sm:text-xs text-muted-foreground uppercase">Or continue with</span>
+        <span className="text-[11px] sm:text-xs text-muted-foreground uppercase">
+          Or continue with
+        </span>
         <div className="h-[1px] bg-border flex-1"></div>
       </div>
 

@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { takePostLoginPath } from "@/lib/authRedirect";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -51,7 +52,7 @@ function AuthCallbackPage() {
 
         if (session?.user) {
           toast.success("Successfully signed in with Google!");
-          navigate({ to: "/profile" });
+          navigate({ href: takePostLoginPath() ?? "/profile" });
           return;
         }
 
@@ -62,7 +63,7 @@ function AuthCallbackPage() {
           if (newSession?.user && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
             subscription.unsubscribe();
             toast.success("Successfully signed in with Google!");
-            navigate({ to: "/profile" });
+            navigate({ href: takePostLoginPath() ?? "/profile" });
           }
         });
 
@@ -72,7 +73,7 @@ function AuthCallbackPage() {
           supabase.auth.getSession().then(({ data: { session: finalCheck } }) => {
             if (finalCheck?.user) {
               toast.success("Successfully signed in with Google!");
-              navigate({ to: "/profile" });
+              navigate({ href: takePostLoginPath() ?? "/profile" });
             } else {
               toast.error("Session verification timed out. Please sign in again.");
               navigate({ to: "/login" });
