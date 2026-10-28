@@ -84,7 +84,6 @@ function Bag() {
                       >
                         {l.product.name}
                       </Link>
-                      <div className="text-xs text-muted-foreground mt-0.5">Size: {l.size}</div>
                       <div className="text-sm font-medium mt-1">{gbp(l.product.price)}</div>
                     </div>
                   </div>
@@ -118,7 +117,6 @@ function Bag() {
                           <X className="size-4 sm:size-5" />
                         </button>
                       </div>
-                      <div className="hidden min-[480px]:block text-sm text-muted-foreground mt-1">Size: {l.size}</div>
                       <div className="hidden min-[480px]:block mt-2 text-lg font-medium">{gbp(l.product.price)}</div>
                     </div>
                     <div className="flex justify-between items-center mt-3 sm:mt-4 pt-2 border-t min-[480px]:border-t-0 border-border/40">

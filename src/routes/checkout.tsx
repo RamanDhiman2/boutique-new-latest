@@ -674,7 +674,6 @@ function CheckoutPage() {
                         </div>
                         <div className="flex-1 min-w-0 py-1">
                           <div className="font-medium text-sm truncate">{l.product.name}</div>
-                          <div className="text-muted-foreground text-xs mt-1">Size: {l.size}</div>
                           <div className="font-medium text-sm mt-3">
                             {gbp(l.product.price * l.qty)}
                           </div>

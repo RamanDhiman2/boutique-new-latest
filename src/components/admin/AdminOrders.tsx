@@ -358,7 +358,7 @@ function OrderDetail({ order, onSaved }: { order: AdminOrder; onSaved: () => voi
                   <div className="flex-1 min-w-0">
                     <p className="text-sm leading-snug">{prod?.name || it.product_id}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Size {it.size || "Custom"} · Qty {it.quantity}
+                      Qty {it.quantity}
                     </p>
                   </div>
                   <p className="text-sm tabular-nums">

@@ -95,7 +95,6 @@ export function isPaidOrder(order: OrderRecord) {
 // Products
 // ---------------------------------------------------------------------------
 
-export const PRODUCT_SIZE_OPTIONS = ["XS", "S", "M", "L", "XL", "XXL", "Custom"];
 const PRODUCT_IMAGE_BUCKET = "product-images";
 const MAX_IMAGE_BYTES = 8 * 1024 * 1024;
 

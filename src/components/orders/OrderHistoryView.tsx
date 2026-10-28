@@ -88,7 +88,7 @@ export function OrderHistoryView({ orders: allOrders, onOrderCancelled }: OrderH
       const itemMatches = order.order_items?.some((item) => {
         const prod = findProduct(item.product_id);
         const name = prod?.name || item.product_id;
-        return name.toLowerCase().includes(q) || item.size.toLowerCase().includes(q);
+        return name.toLowerCase().includes(q);
       });
 
       return orderMatches || itemMatches;
@@ -228,7 +228,6 @@ export function OrderHistoryView({ orders: allOrders, onOrderCancelled }: OrderH
         const name = prod?.name || it.product_id;
         return [
           name,
-          it.size || "Custom",
           String(it.quantity),
           `£${Number(it.price).toFixed(2)}`,
           `£${(Number(it.price) * it.quantity).toFixed(2)}`,
@@ -237,7 +236,7 @@ export function OrderHistoryView({ orders: allOrders, onOrderCancelled }: OrderH
 
       autoTable(doc, {
         startY: 92,
-        head: [["Item Description", "Size", "Qty", "Unit Price", "Total Amount"]],
+        head: [["Item Description", "Qty", "Unit Price", "Total Amount"]],
         body: tableRows,
         theme: "striped",
         headStyles: {
@@ -251,16 +250,15 @@ export function OrderHistoryView({ orders: allOrders, onOrderCancelled }: OrderH
           textColor: [40, 40, 40],
         },
         columnStyles: {
-          0: { cellWidth: 85 },
-          1: { cellWidth: 25 },
-          2: { cellWidth: 15, halign: "center" },
+          0: { cellWidth: 107 },
+          1: { cellWidth: 15, halign: "center" },
+          2: { cellWidth: 30, halign: "right" },
           3: { cellWidth: 30, halign: "right" },
-          4: { cellWidth: 30, halign: "right" },
         },
         foot: [
-          ["", "", "", "Subtotal:", `£${Number(order.total_amount).toFixed(2)}`],
-          ["", "", "", "Shipping:", "FREE / Inclusive"],
-          ["", "", "", "Grand Total:", `£${Number(order.total_amount).toFixed(2)}`],
+          ["", "", "Subtotal:", `£${Number(order.total_amount).toFixed(2)}`],
+          ["", "", "Shipping:", "FREE / Inclusive"],
+          ["", "", "Grand Total:", `£${Number(order.total_amount).toFixed(2)}`],
         ],
         footStyles: {
           fontSize: 9,
@@ -543,7 +541,7 @@ export function OrderHistoryView({ orders: allOrders, onOrderCancelled }: OrderH
                               {itemName}
                             </Link>
                             <p className="text-xs text-muted-foreground mt-1">
-                              Size {item.size || "Custom"} · Qty {item.quantity}
+                              Qty {item.quantity}
                               {prod?.colour ? ` · ${prod.colour}` : ""}
                             </p>
                             {!isCancelled && (

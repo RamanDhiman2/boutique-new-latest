@@ -5,7 +5,6 @@ import { ExternalLink, ImagePlus, Loader2, Plus, Search, Star, Trash2, X } from 
 import { toast } from "sonner";
 import { gbp, type Product } from "@/lib/catalog";
 import {
-  PRODUCT_SIZE_OPTIONS,
   deleteProduct,
   fetchAdminCategories,
   fetchAdminProducts,
@@ -311,9 +310,8 @@ function ProductEditor({
   const [colour, setColour] = useState(product?.colour ?? "");
   const [category, setCategory] = useState(product?.category ?? categories[0]?.slug ?? "");
   const [description, setDescription] = useState(product?.description ?? "");
-  const [sizes, setSizes] = useState<string[]>(
-    product?.sizes ?? ["XS", "S", "M", "L", "XL", "Custom"],
-  );
+  // The shop has no size options; every piece is made to order ("Custom")
+  const sizes = product?.sizes ?? ["Custom"];
   const [customisable, setCustomisable] = useState(product?.customisable ?? true);
   const [isUpcoming, setIsUpcoming] = useState(Boolean(product?.isUpcoming));
   const [soldOut, setSoldOut] = useState(Boolean(product?.soldOut));
@@ -593,32 +591,6 @@ function ProductEditor({
             <p className="text-[11px] text-muted-foreground mt-1">
               Lines like "• Fabric: Silk" show as a details table on the product page.
             </p>
-          </div>
-          <div>
-            <span className="block text-xs font-medium mb-1.5">Sizes</span>
-            <div className="flex flex-wrap gap-1.5">
-              {PRODUCT_SIZE_OPTIONS.map((s) => {
-                const on = sizes.includes(s);
-                return (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() =>
-                      setSizes((prev) =>
-                        on
-                          ? prev.filter((x) => x !== s)
-                          : PRODUCT_SIZE_OPTIONS.filter((x) => x === s || prev.includes(x)),
-                      )
-                    }
-                    className={`px-3 py-1.5 text-xs rounded-sm border ${
-                      on ? "bg-[#6B2C3A] text-white border-[#6B2C3A]" : "bg-white border-black/15"
-                    }`}
-                  >
-                    {s}
-                  </button>
-                );
-              })}
-            </div>
           </div>
         </section>
 

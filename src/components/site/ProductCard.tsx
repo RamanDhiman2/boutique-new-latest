@@ -73,7 +73,7 @@ export function ProductCard({ p, disableReveal }: { p: Product; disableReveal?: 
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                add(p.id, p.sizes[0] ?? "Custom");
+                add(p.id, "Custom");
                 toast.success(`${p.name} added to your bag`);
               }}
               className="bg-primary text-primary-foreground py-2 sm:py-2.5 eyebrow !text-[0.55rem] sm:!text-[0.58rem] hover:bg-primary/90 transition-colors"
