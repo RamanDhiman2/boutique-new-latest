@@ -41,12 +41,7 @@ export function getRuntimeEnv(key: string): string {
 }
 
 function checkIsConfigured(url: string, key: string): boolean {
-  return Boolean(
-    url &&
-    key &&
-    url.startsWith("http") &&
-    !url.includes("placeholder"),
-  );
+  return Boolean(url && key && url.startsWith("http") && !url.includes("placeholder"));
 }
 
 const buildSupabaseUrl = getRuntimeEnv("VITE_SUPABASE_URL");
@@ -78,7 +73,8 @@ export function getAuthRedirectUrl(): string {
 // Production must NEVER authenticate as a demo user or serve mock data.
 function createUnconfiguredProductionClient() {
   const missingError = {
-    message: "Authentication service is currently unavailable. Supabase environment variables (VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY) are not configured.",
+    message:
+      "Authentication service is currently unavailable. Supabase environment variables (VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY) are not configured.",
   };
 
   return {
@@ -128,7 +124,10 @@ function createUnconfiguredProductionClient() {
               return Promise.resolve({ data: [], error: missingError });
             },
             then(onfulfilled?: (val: any) => any, onrejected?: (reason: any) => any) {
-              return Promise.resolve({ data: [], error: missingError }).then(onfulfilled, onrejected);
+              return Promise.resolve({ data: [], error: missingError }).then(
+                onfulfilled,
+                onrejected,
+              );
             },
           };
         },
@@ -142,18 +141,32 @@ function createUnconfiguredProductionClient() {
         },
         update() {
           const builder: any = {
-            eq() { return builder; },
-            select() { return builder; },
-            single() { return Promise.resolve({ data: null, error: missingError }); },
-            then(onf?: any, onr?: any) { return Promise.resolve({ data: null, error: missingError }).then(onf, onr); },
+            eq() {
+              return builder;
+            },
+            select() {
+              return builder;
+            },
+            single() {
+              return Promise.resolve({ data: null, error: missingError });
+            },
+            then(onf?: any, onr?: any) {
+              return Promise.resolve({ data: null, error: missingError }).then(onf, onr);
+            },
           };
           return builder;
         },
         delete() {
           const builder: any = {
-            eq() { return builder; },
-            select() { return builder; },
-            then(onf?: any, onr?: any) { return Promise.resolve({ data: null, error: missingError }).then(onf, onr); },
+            eq() {
+              return builder;
+            },
+            select() {
+              return builder;
+            },
+            then(onf?: any, onr?: any) {
+              return Promise.resolve({ data: null, error: missingError }).then(onf, onr);
+            },
           };
           return builder;
         },
@@ -302,9 +315,7 @@ function createMockSupabase() {
         if (!email) {
           return { data: { user: null, session: null }, error: { message: "Email is required" } };
         }
-        const registeredUsers = getStorage<string[]>("registered_users", [
-          "customer@gmail.com",
-        ]);
+        const registeredUsers = getStorage<string[]>("registered_users", ["customer@gmail.com"]);
         if (!registeredUsers.includes(email)) {
           return {
             data: { user: null, session: null },
@@ -338,9 +349,7 @@ function createMockSupabase() {
         if (!email) {
           return { data: { user: null, session: null }, error: { message: "Email is required" } };
         }
-        const registeredUsers = getStorage<string[]>("registered_users", [
-          "customer@gmail.com",
-        ]);
+        const registeredUsers = getStorage<string[]>("registered_users", ["customer@gmail.com"]);
         if (registeredUsers.includes(email)) {
           return {
             data: { user: null, session: null },
@@ -474,7 +483,8 @@ function createMockSupabase() {
                       author_name: "Harleen Kaur",
                       rating: 5,
                       title: "Pure Royal Craftsmanship",
-                      comment: "The velvet is incredibly rich and the zardozi embroidery is heavy and authentic. The bespoke fit was made to measure perfectly. Everyone at my family wedding complimented it!",
+                      comment:
+                        "The velvet is incredibly rich and the zardozi embroidery is heavy and authentic. The bespoke fit was made to measure perfectly. Everyone at my family wedding complimented it!",
                       verified_purchase: true,
                       created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
                     },
@@ -484,7 +494,8 @@ function createMockSupabase() {
                       author_name: "Priya Sharma",
                       rating: 5,
                       title: "Stunning Bridal Ensemble",
-                      comment: "Wore this for my cousin's wedding and received endless compliments. The flare and dupatta finish are top tier.",
+                      comment:
+                        "Wore this for my cousin's wedding and received endless compliments. The flare and dupatta finish are top tier.",
                       verified_purchase: true,
                       created_at: new Date(Date.now() - 12 * 86400000).toISOString(),
                     },
@@ -494,7 +505,8 @@ function createMockSupabase() {
                       author_name: "Simran Gill",
                       rating: 5,
                       title: "Exquisite Aari embroidery",
-                      comment: "The shade of purple is so regal. Lightweight georgette yet the work feels premium and luxury.",
+                      comment:
+                        "The shade of purple is so regal. Lightweight georgette yet the work feels premium and luxury.",
                       verified_purchase: true,
                       created_at: new Date(Date.now() - 8 * 86400000).toISOString(),
                     },
@@ -504,7 +516,8 @@ function createMockSupabase() {
                       author_name: "Jasleen B.",
                       rating: 5,
                       title: "Colour combination is mesmerising",
-                      comment: "Navy and green silk blend is stunning in person. Delivery to London was fast and beautifully packaged.",
+                      comment:
+                        "Navy and green silk blend is stunning in person. Delivery to London was fast and beautifully packaged.",
                       verified_purchase: true,
                       created_at: new Date(Date.now() - 15 * 86400000).toISOString(),
                     },
@@ -514,7 +527,8 @@ function createMockSupabase() {
                       author_name: "Amanpreet K.",
                       rating: 5,
                       title: "Showstopper black velvet suit",
-                      comment: "The black velvet with heavy hand embroidery is sensational. Worth every single penny.",
+                      comment:
+                        "The black velvet with heavy hand embroidery is sensational. Worth every single penny.",
                       verified_purchase: true,
                       created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
                     },
@@ -586,7 +600,10 @@ function createMockSupabase() {
                 }));
                 setStorage("products", genericList);
               }
-              return Promise.resolve({ data: genericList, error: null }).then(onfulfilled, onrejected);
+              return Promise.resolve({ data: genericList, error: null }).then(
+                onfulfilled,
+                onrejected,
+              );
             },
           };
         },
@@ -608,8 +625,13 @@ function createMockSupabase() {
             error: null,
           };
 
-          const promise = Promise.resolve(result) as Promise<SingleResult<Record<string, unknown>>> & {
-            select(): { single(): Promise<SingleResult<Record<string, unknown>>>; maybeSingle(): Promise<SingleResult<Record<string, unknown>>> };
+          const promise = Promise.resolve(result) as Promise<
+            SingleResult<Record<string, unknown>>
+          > & {
+            select(): {
+              single(): Promise<SingleResult<Record<string, unknown>>>;
+              maybeSingle(): Promise<SingleResult<Record<string, unknown>>>;
+            };
           };
 
           promise.select = () => ({
@@ -622,7 +644,9 @@ function createMockSupabase() {
         update(updates: Record<string, unknown>) {
           const filters: Array<{ col: string; val: unknown }> = [];
 
-          const execUpdate = async (): Promise<SingleResult<Record<string, unknown>> & { data: any }> => {
+          const execUpdate = async (): Promise<
+            SingleResult<Record<string, unknown>> & { data: any }
+          > => {
             const list = getStorage<Record<string, unknown>[]>(table, []);
             let updatedItem: Record<string, unknown> | null = null;
             const updatedList = list.map((item) => {
@@ -688,7 +712,10 @@ function createMockSupabase() {
         const session = getSession();
         const userId = session?.user?.id;
         if (!userId) {
-          return { data: null, error: { message: "Unauthorized: Please sign in to place an order" } };
+          return {
+            data: null,
+            error: { message: "Unauthorized: Please sign in to place an order" },
+          };
         }
 
         // Validate address
@@ -764,7 +791,10 @@ function createMockSupabase() {
     },
     functions: {
       async invoke(_funcName: string, _options?: { body?: any }) {
-        return { data: null, error: new Error("Supabase Edge Functions are not available in mock mode") };
+        return {
+          data: null,
+          error: new Error("Supabase Edge Functions are not available in mock mode"),
+        };
       },
     },
   };
@@ -781,7 +811,9 @@ export function getSupabaseClient() {
 
   if (configured) {
     if (!cachedClient || lastUrl !== currentUrl || lastKey !== currentKey) {
-      cachedClient = createClient(currentUrl, currentKey);
+      // PKCE: OAuth/email links return ?code=, which the client exchanges itself on
+      // initialisation (detectSessionInUrl) before /auth/callback strips the URL.
+      cachedClient = createClient(currentUrl, currentKey, { auth: { flowType: "pkce" } });
       lastUrl = currentUrl;
       lastKey = currentKey;
     }
@@ -809,4 +841,3 @@ export const supabase = new Proxy({} as ReturnType<typeof createMockSupabase>, {
     return value;
   },
 });
-

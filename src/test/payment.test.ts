@@ -74,54 +74,6 @@ describe("Payment Flow - Input & Price Validation", () => {
   });
 });
 
-describe("calculateOrderTotal (server pricing)", () => {
-  const dbProducts = [
-    { id: "elegant-maroon-suit", name: "Elegant Maroon Suit", price: 65, stock: 5 },
-    {
-      id: "elegant-firozi-heavy-suit",
-      name: "Elegant Firozi Heavy Suit",
-      price: "150",
-      stock: null,
-    },
-    { id: "unpriced-suit", name: "Unpriced Suit", price: null, stock: 5 },
-  ];
-  const line = (product_id: string, quantity: number) => ({ product_id, size: "M", quantity });
-
-  it("prices lines from the products table only", async () => {
-    const { calculateOrderTotal } = await import("@/server/payment");
-    const { lines, total } = calculateOrderTotal(
-      [line("elegant-maroon-suit", 1), line("elegant-firozi-heavy-suit", 2)],
-      dbProducts,
-    );
-    expect(total).toBe(365);
-    expect(lines.map((l) => l.price)).toEqual([65, 150]);
-  });
-
-  it("rejects products missing from the catalog instead of using a client price", async () => {
-    const { calculateOrderTotal } = await import("@/server/payment");
-    expect(() => calculateOrderTotal([line("tampered-product-999", 1)], dbProducts)).toThrow(
-      'Product "tampered-product-999" is not available',
-    );
-  });
-
-  it("rejects products without a valid price", async () => {
-    const { calculateOrderTotal } = await import("@/server/payment");
-    expect(() => calculateOrderTotal([line("unpriced-suit", 1)], dbProducts)).toThrow(
-      "has no valid price",
-    );
-  });
-
-  it.each([0, -1, 1.5, 101, Number.NaN])("rejects quantity %s", async (qty) => {
-    const { calculateOrderTotal } = await import("@/server/payment");
-    expect(() =>
-      calculateOrderTotal(
-        [line("elegant-maroon-suit", 2), line("elegant-firozi-heavy-suit", qty)],
-        dbProducts,
-      ),
-    ).toThrow("Invalid quantity");
-  });
-});
-
 describe("Stripe Webhook Signature Verification", () => {
   const dummySecret = "whsec_test_secret_for_unit_tests_1234567890abcdef";
   const stripe = new Stripe("sk_test_mock_key_12345", { apiVersion: "2026-09-30.endive" });

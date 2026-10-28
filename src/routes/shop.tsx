@@ -58,7 +58,7 @@ function Shop() {
           </Link>
         ))}
       </div>
-      <div key={q} className="pt-8 sm:pt-14 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 sm:gap-x-5 gap-y-8 sm:gap-y-12">
+      <div className="pt-8 sm:pt-14 grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-3 sm:gap-x-5 gap-y-8 sm:gap-y-12">
         {list.map((p) => (
           <ProductCard key={p.id} p={p} />
         ))}

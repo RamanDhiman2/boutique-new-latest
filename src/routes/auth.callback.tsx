@@ -22,20 +22,13 @@ function AuthCallbackPage() {
         if (typeof window === "undefined") return;
 
         const url = new URL(window.location.href);
-        const code = url.searchParams.get("code");
         const error = url.searchParams.get("error");
-        const errorDesc = url.searchParams.get("error_description");
 
-        // 1. Immediately sanitize browser URL so tokens are never retained in browser history
-        if (window.location.hash || window.location.search) {
-          window.history.replaceState(null, "", window.location.pathname);
-        }
-
-        // 2. Handle provider errors (e.g. user cancelled Google consent)
+        // 1. Handle provider errors (e.g. user cancelled Google consent).
+        // Show a fixed message: error_description is attacker-controllable text.
         if (error) {
-          const userFriendlyError = errorDesc
-            ? decodeURIComponent(errorDesc).replace(/\+/g, " ")
-            : "Google authentication was cancelled or failed.";
+          window.history.replaceState(null, "", window.location.pathname);
+          const userFriendlyError = "Google sign-in was cancelled or failed. Please try again.";
           setErrorMsg(userFriendlyError);
           toast.error(userFriendlyError);
           setTimeout(() => {
@@ -44,26 +37,17 @@ function AuthCallbackPage() {
           return;
         }
 
-        // 3. Exchange PKCE code for session if present
-        if (code) {
-          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-          if (exchangeError) {
-            console.error("OAuth code exchange failure:", exchangeError.message);
-            setErrorMsg(
-              "Authentication session could not be completed. Please try signing in again.",
-            );
-            toast.error("Google sign-in could not be completed.");
-            setTimeout(() => {
-              navigate({ to: "/login" });
-            }, 2500);
-            return;
-          }
-        }
-
-        // 4. Verify authenticated session
+        // 2. getSession() waits for the client's initialisation, which detects the
+        // ?code= in the URL and exchanges it for a session (PKCE). The URL must stay
+        // intact until this has happened.
         const {
           data: { session },
         } = await supabase.auth.getSession();
+
+        // 3. Now sanitize the browser URL so codes/tokens are not kept in history
+        if (window.location.hash || window.location.search) {
+          window.history.replaceState(null, "", window.location.pathname);
+        }
 
         if (session?.user) {
           toast.success("Successfully signed in with Google!");

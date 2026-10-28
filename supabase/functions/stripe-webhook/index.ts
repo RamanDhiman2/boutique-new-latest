@@ -94,6 +94,7 @@ serve(async (req) => {
           break
         }
 
+        const wasAlreadyCaptured = order.payment_status === 'captured'
         const expectedAmountInPence = Math.round(Number(order.total_amount) * 100)
         if (paymentIntent.amount !== expectedAmountInPence || paymentIntent.currency !== 'gbp') {
           console.error(`Payment amount/currency mismatch for order ${orderId}: expected ${expectedAmountInPence} gbp, got ${paymentIntent.amount} ${paymentIntent.currency}`)
@@ -114,6 +115,16 @@ serve(async (req) => {
         }
 
         console.log(`Successfully verified and captured order ${orderId} via webhook`)
+
+        // Notify the store owner from the server, only on the first capture of this order
+        if (!wasAlreadyCaptured) {
+          try {
+            await sendOrderNotification(supabaseAdmin, orderId)
+          } catch (emailErr: any) {
+            // Never fail the webhook because of email problems
+            console.error(`Order ${orderId} captured but owner notification failed:`, emailErr?.message || emailErr)
+          }
+        }
         break
       }
 
@@ -178,6 +189,120 @@ serve(async (req) => {
     })
   } catch (error: any) {
     console.error('Error processing webhook event:', error)
+
+    // Forget this event so Stripe's retry is processed instead of skipped as a duplicate
+    const { error: forgetError } = await supabaseAdmin
+      .from('stripe_webhook_events')
+      .delete()
+      .eq('id', event.id)
+    if (forgetError) {
+      console.error(`Failed to clear dedup record for event ${event.id}:`, forgetError)
+    }
+
     return new Response('Webhook processing failed', { status: 500 })
   }
 })
+
+/**
+ * Emails the store owner the details of a newly captured order via the EmailJS REST API.
+ * Runs server-side so order notifications cannot be forged from the browser.
+ * Requires EMAILJS_SERVICE_ID, EMAILJS_ORDER_TEMPLATE_ID, EMAILJS_PUBLIC_KEY and
+ * EMAILJS_PRIVATE_KEY secrets, and "Allow EmailJS API for non-browser applications"
+ * enabled in the EmailJS dashboard.
+ */
+async function sendOrderNotification(supabaseAdmin: any, orderId: string) {
+  const serviceId = Deno.env.get('EMAILJS_SERVICE_ID') ?? ''
+  const templateId = Deno.env.get('EMAILJS_ORDER_TEMPLATE_ID') ?? ''
+  const publicKey = Deno.env.get('EMAILJS_PUBLIC_KEY') ?? ''
+  const privateKey = Deno.env.get('EMAILJS_PRIVATE_KEY') ?? ''
+
+  if (!serviceId || !templateId || !publicKey || !privateKey) {
+    console.warn('EmailJS secrets not configured; skipping order notification email')
+    return
+  }
+
+  const { data: order, error } = await supabaseAdmin
+    .from('orders')
+    .select('id, user_id, status, total_amount, shipping_address, created_at, order_items(product_id, size, quantity, price)')
+    .eq('id', orderId)
+    .single()
+
+  if (error || !order) {
+    throw new Error(`Order ${orderId} not found for notification`)
+  }
+
+  const { data: userData } = await supabaseAdmin.auth.admin.getUserById(order.user_id)
+  const user = userData?.user
+  const meta = (user?.user_metadata ?? {}) as Record<string, any>
+  const shipping = (order.shipping_address ?? {}) as Record<string, any>
+  const items = Array.isArray(order.order_items) ? order.order_items : []
+
+  const customerName = meta.full_name || meta.name || shipping.full_name || 'Customer'
+  const customerEmail = user?.email || shipping.email || ''
+  const customerPhone = user?.phone || meta.phone || shipping.phone || ''
+  const total = Number(order.total_amount) || 0
+  const shippingAddress = [
+    shipping.street,
+    shipping.apartment,
+    `${shipping.city ?? ''}, ${shipping.state ?? ''} ${shipping.zip ?? ''}`.trim(),
+    shipping.country || 'United Kingdom',
+  ].filter(Boolean).join(', ')
+  const itemsText = items
+    .map((it: any, i: number) =>
+      `  ${i + 1}. ${it.product_id} — Size: ${it.size || 'Standard'} — Qty: ${it.quantity} — £${(Number(it.price) * Number(it.quantity)).toFixed(2)}`)
+    .join('\n')
+  const orderDate = new Date(order.created_at || Date.now()).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })
+
+  const message = [
+    `NEW PAID ORDER — #${order.id}`,
+    `Date: ${orderDate}`,
+    `Payment: captured via Stripe (GBP)`,
+    `Total charged: £${total.toFixed(2)}`,
+    ``,
+    `Customer: ${customerName}`,
+    `Email: ${customerEmail || 'Not provided'}`,
+    `Phone: ${customerPhone || 'Not provided'}`,
+    ``,
+    `Ship to: ${shipping.full_name || customerName}`,
+    `Phone: ${shipping.phone || customerPhone || 'Not provided'}`,
+    `Address: ${shippingAddress}`,
+    ``,
+    `Items (${items.length}):`,
+    itemsText,
+  ].join('\n')
+
+  const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      service_id: serviceId,
+      template_id: templateId,
+      user_id: publicKey,
+      accessToken: privateKey,
+      template_params: {
+        name: customerName,
+        email: customerEmail,
+        reply_to: customerEmail,
+        subject: `New Paid Order — Order #${order.id.slice(0, 8)}`,
+        message,
+        order_id: order.id,
+        order_date: orderDate,
+        order_status: order.status || 'processing',
+        payment_status: 'captured',
+        payment_method: 'Stripe Online Payment (Card)',
+        order_total: `£${total.toFixed(2)}`,
+        customer_name: customerName,
+        customer_email: customerEmail,
+        customer_phone: customerPhone,
+        shipping_name: shipping.full_name || customerName,
+        shipping_phone: shipping.phone || '',
+        shipping_address: shippingAddress,
+        items_count: String(items.length),
+      },
+    }),
+  })
+
+  if (!res.ok) {
+    throw new Error(`EmailJS responded ${res.status}: ${await res.text()}`)
+  }
+}

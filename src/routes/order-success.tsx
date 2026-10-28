@@ -3,31 +3,27 @@ import { CheckCircle2, Clock, ShieldCheck, AlertCircle } from "lucide-react";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
-import { gbp, products } from "@/lib/catalog";
+import { gbp } from "@/lib/catalog";
 import { useCart } from "@/lib/cart";
 import { useEffect, useRef } from "react";
-import { sendOrderNotificationEmail } from "@/lib/email";
 
 export const Route = createFileRoute("/order-success")({
-  validateSearch: (search: Record<string, unknown>): { order_id?: string | undefined; redirect_status?: string | undefined } => {
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { order_id?: string | undefined; redirect_status?: string | undefined } => {
     return {
       order_id: typeof search["order_id"] === "string" ? search["order_id"] : undefined,
-      redirect_status: typeof search["redirect_status"] === "string" ? search["redirect_status"] : undefined,
+      redirect_status:
+        typeof search["redirect_status"] === "string" ? search["redirect_status"] : undefined,
     };
   },
   component: OrderSuccessPage,
 });
 
 function OrderSuccessPage() {
-  const { order_id } = Route.useSearch();
-  const { clear } = useCart();
-  const notificationDispatchedRef = useRef<boolean>(false);
-
-  useEffect(() => {
-    if (order_id) {
-      clear();
-    }
-  }, [order_id, clear]);
+  const { order_id, redirect_status } = Route.useSearch();
+  const { removeLines } = useCart();
+  const purchasedLinesRemovedRef = useRef<boolean>(false);
 
   const { data: order, isLoading } = useQuery({
     queryKey: ["order-verification", order_id],
@@ -35,7 +31,9 @@ function OrderSuccessPage() {
       if (!order_id) return null;
       const { data, error } = await supabase
         .from("orders")
-        .select("id, user_id, status, payment_status, total_amount, shipping_address, payment_provider_id, created_at, order_items(id, product_id, size, quantity, price)")
+        .select(
+          "id, user_id, status, payment_status, total_amount, shipping_address, payment_provider_id, created_at, order_items(id, product_id, size, quantity, price)",
+        )
         .eq("id", order_id);
 
       if (error || !data) {
@@ -54,95 +52,18 @@ function OrderSuccessPage() {
   });
 
   const isCaptured = order?.payment_status === "captured";
-  const isFailed = order?.payment_status === "failed";
+  // Stripe appends redirect_status=failed when a 3D Secure / redirect payment fails
+  const isFailed =
+    order?.payment_status === "failed" || (!isCaptured && redirect_status === "failed");
 
-  // Dispatch EmailJS order notification ONLY when payment is authoritatively captured
-  // and deduplicate to ensure only one email is ever sent per order
+  // Remove only the purchased lines from the bag, once, after payment is captured.
+  // (The store owner's order email is sent server-side by the Stripe webhook.)
   useEffect(() => {
-    if (!order || !isCaptured || !order_id) return;
-
-    const storageKey = `order_notif_sent_${order_id}`;
-    if (notificationDispatchedRef.current || localStorage.getItem(storageKey) === "true") {
-      return;
-    }
-
-    // Mark in-memory immediately to prevent race conditions during rapid re-renders
-    notificationDispatchedRef.current = true;
-
-    async function dispatchNotification() {
-      try {
-        const { data: authData } = await supabase.auth.getSession();
-        const user = authData?.session?.user;
-
-        const shipping = (order.shipping_address as any) || {};
-
-        // Resolve customer details from auth profile or order shipping snapshot
-        const meta = user?.user_metadata as Record<string, any> | undefined;
-        const customerName =
-          meta?.["full_name"] ||
-          meta?.["name"] ||
-          shipping.full_name ||
-          "Customer";
-        const customerEmail =
-          user?.email ||
-          meta?.["email"] ||
-          shipping.email ||
-          "";
-        const customerPhone =
-          user?.phone ||
-          meta?.["phone"] ||
-          shipping.phone ||
-          "";
-
-        // Map order items with catalog names
-        const rawItems = Array.isArray(order.order_items) ? order.order_items : [];
-        const mappedItems = rawItems.map((item: any) => {
-          const matchedProduct = products.find((p) => p.id === item.product_id);
-          return {
-            product_id: item.product_id,
-            product_name: matchedProduct?.name || item.product_id,
-            size: item.size || "Standard",
-            quantity: Number(item.quantity) || 1,
-            price: Number(item.price) || 0,
-          };
-        });
-
-        await sendOrderNotificationEmail({
-          order_id: order.id,
-          order_date: new Date(order.created_at || Date.now()).toLocaleString("en-GB", {
-            dateStyle: "medium",
-            timeStyle: "short",
-          }),
-          order_status: order.status || "processing",
-          payment_status: "captured",
-          payment_method: "Stripe Online Payment (Card)",
-          currency: "GBP",
-          total_amount: Number(order.total_amount) || 0,
-          customer_name: customerName,
-          customer_email: customerEmail,
-          customer_phone: customerPhone,
-          shipping_name: shipping.full_name || customerName,
-          shipping_phone: shipping.phone || customerPhone,
-          shipping_street: shipping.street || "",
-          shipping_apartment: shipping.apartment || undefined,
-          shipping_city: shipping.city || "",
-          shipping_state: shipping.state || "",
-          shipping_zip: shipping.zip || "",
-          shipping_country: shipping.country || "United Kingdom",
-          items: mappedItems,
-        });
-
-        // Mark permanently in client storage to prevent duplicate on page reload
-        localStorage.setItem(storageKey, "true");
-        console.log(`[Order Notification] Successfully sent email notification for Order #${order.id}`);
-      } catch (err: any) {
-        console.warn("[Order Notification] Failed to dispatch email notification:", err?.message || err);
-        // Do not block or disrupt customer experience if email service has issues
-      }
-    }
-
-    dispatchNotification();
-  }, [order, isCaptured, order_id]);
+    if (!isCaptured || purchasedLinesRemovedRef.current) return;
+    purchasedLinesRemovedRef.current = true;
+    const rawItems = Array.isArray(order?.order_items) ? order.order_items : [];
+    removeLines(rawItems.map((item: any) => ({ id: item.product_id, size: item.size })));
+  }, [isCaptured, order, removeLines]);
 
   return (
     <div className="mx-auto max-w-5xl px-4 sm:px-6 pt-4 pb-20">
@@ -153,25 +74,35 @@ function OrderSuccessPage() {
         {isCaptured ? (
           <>
             <CheckCircle2 className="size-16 sm:size-20 text-emerald-600 mb-4 sm:mb-6" />
-            <h1 className="text-2xl sm:text-3xl md:text-5xl mb-3 font-serif">Payment Verified & Order Confirmed!</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-5xl mb-3 font-serif">
+              Payment Verified & Order Confirmed!
+            </h1>
             <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-lg mb-6">
-              Thank you for shopping with Sohni Mutiyaar. Your payment has been securely authorized and captured via Stripe. Your bespoke couture order is now in production.
+              Thank you for shopping with Sohni Mutiyaar. Your payment has been securely authorized
+              and captured via Stripe. Your bespoke couture order is now in production.
             </p>
           </>
         ) : isFailed ? (
           <>
             <AlertCircle className="size-16 sm:size-20 text-red-600 mb-4 sm:mb-6" />
-            <h1 className="text-2xl sm:text-3xl md:text-5xl mb-3 font-serif">Payment Authorization Failed</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-5xl mb-3 font-serif">
+              Payment Authorization Failed
+            </h1>
             <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-lg mb-6">
-              Your payment could not be captured by the gateway. No funds were debited. Please return to checkout to retry with a valid payment card.
+              Your payment could not be captured by the gateway. No funds were debited. Please
+              return to checkout to retry with a valid payment card.
             </p>
           </>
         ) : (
           <>
             <Clock className="size-16 sm:size-20 text-amber-600 mb-4 sm:mb-6 animate-pulse" />
-            <h1 className="text-2xl sm:text-3xl md:text-5xl mb-3 font-serif">Payment Processing...</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-5xl mb-3 font-serif">
+              Payment Processing...
+            </h1>
             <p className="text-muted-foreground text-sm sm:text-base md:text-lg max-w-lg mb-6">
-              Your payment has been submitted securely to Stripe. We are awaiting authoritative confirmation from the payment gateway to finalize your order. This page updates automatically.
+              Your payment has been submitted securely to Stripe. We are awaiting authoritative
+              confirmation from the payment gateway to finalize your order. This page updates
+              automatically.
             </p>
           </>
         )}
@@ -180,12 +111,16 @@ function OrderSuccessPage() {
           <div className="mb-8 w-full max-w-md p-5 bg-card border border-border/60 rounded-sm text-left shadow-xs">
             <div className="flex items-center justify-between border-b pb-3 mb-3 text-xs tracking-wider uppercase text-muted-foreground">
               <span>Order Reference</span>
-              <span className="font-mono text-foreground font-semibold">#{order_id.slice(0, 8)}</span>
+              <span className="font-mono text-foreground font-semibold">
+                #{order_id.slice(0, 8)}
+              </span>
             </div>
 
             {order?.total_amount != null && (
               <div className="flex items-center justify-between text-sm py-1">
-                <span className="text-muted-foreground">{isCaptured ? "Total Paid" : "Order Total"}</span>
+                <span className="text-muted-foreground">
+                  {isCaptured ? "Total Paid" : "Order Total"}
+                </span>
                 <span className="font-semibold text-foreground">{gbp(order.total_amount)}</span>
               </div>
             )}

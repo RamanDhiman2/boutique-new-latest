@@ -3,7 +3,14 @@ import { Star, CheckCircle, PenLine, Loader2, MessageSquare } from "lucide-react
 import { toast } from "sonner";
 import { supabase, type ProductReviewRecord } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { sendProductReviewNotificationEmail } from "@/lib/email";
 
 interface ProductReviewsProps {
@@ -148,29 +155,37 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
       return;
     }
 
+    if (!user) {
+      toast.error("Please sign in to write a review.");
+      return;
+    }
+
     setSubmitting(true);
-    const newRecord: ProductReviewRecord = {
-      id: "rev_" + Math.random().toString(36).substring(2, 9),
-      product_id: productId,
-      user_id: user?.id || null,
-      author_name: authorName.trim(),
-      rating,
-      title: title.trim() || "Customer Review",
-      comment: comment.trim(),
-      verified_purchase: true,
-      created_at: new Date().toISOString(),
-    };
 
     try {
-      // 1. Save to Supabase table
-      const { error } = await supabase.from("product_reviews").insert(newRecord);
-      if (error) {
-        console.warn("Supabase insert notification:", error.message);
+      // 1. Save to Supabase. The database assigns id, user_id, created_at and
+      // derives verified_purchase from the customer's paid orders.
+      const { data: inserted, error } = await supabase
+        .from("product_reviews")
+        .insert({
+          product_id: productId,
+          user_id: user.id,
+          author_name: authorName.trim(),
+          rating,
+          title: title.trim() || "Customer Review",
+          comment: comment.trim(),
+        })
+        .select()
+        .single();
+
+      if (error || !inserted) {
+        throw new Error(error?.message || "Could not save your review. Please try again.");
       }
 
-      // 2. Optimistically update local state with the newly created review
-      const updated = [newRecord, ...reviews];
-      setReviews(updated);
+      const newRecord = inserted as unknown as ProductReviewRecord;
+
+      // 2. Show the saved review
+      setReviews([newRecord, ...reviews]);
 
       // 3. Dispatch EmailJS notification to admin/owner
       try {
@@ -181,12 +196,17 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
           rating,
           title: title.trim() || "Customer Review",
           comment: comment.trim(),
-          reviewer_email: reviewerEmail.trim() || user?.email || undefined,
-          verified_purchase: true,
+          reviewer_email: reviewerEmail.trim() || user.email || undefined,
+          verified_purchase: newRecord.verified_purchase,
         });
-        console.log(`[Review Notification] Successfully sent EmailJS alert to admin for review on ${productName}`);
+        console.log(
+          `[Review Notification] Successfully sent EmailJS alert to admin for review on ${productName}`,
+        );
       } catch (emailErr: any) {
-        console.warn("[Review Notification] EmailJS dispatch error:", emailErr?.message || emailErr);
+        console.warn(
+          "[Review Notification] EmailJS dispatch error:",
+          emailErr?.message || emailErr,
+        );
         // Never block customer experience if email service encounters an issue
       }
 
@@ -204,16 +224,18 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
 
   // Rating stats calculation
   const totalCount = reviews.length;
-  const avgRating = totalCount > 0
-    ? (reviews.reduce((sum, r) => sum + r.rating, 0) / totalCount).toFixed(1)
-    : "5.0";
+  const avgRating =
+    totalCount > 0
+      ? (reviews.reduce((sum, r) => sum + r.rating, 0) / totalCount).toFixed(1)
+      : "5.0";
 
   const countsByStar = [5, 4, 3, 2, 1].map((s) => ({
     star: s,
     count: reviews.filter((r) => r.rating === s).length,
-    percentage: totalCount > 0
-      ? Math.round((reviews.filter((r) => r.rating === s).length / totalCount) * 100)
-      : 0,
+    percentage:
+      totalCount > 0
+        ? Math.round((reviews.filter((r) => r.rating === s).length / totalCount) * 100)
+        : 0,
   }));
 
   return (
@@ -225,7 +247,8 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
             Customer Reviews for {productName}
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
-            Real feedback from verified clients on bespoke fit, embroidery craftsmanship, and fabric quality.
+            Real feedback from verified clients on bespoke fit, embroidery craftsmanship, and fabric
+            quality.
           </p>
         </div>
 
@@ -289,6 +312,7 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
                   type="text"
                   required
                   value={authorName}
+                  maxLength={80}
                   onChange={(e) => setAuthorName(e.target.value)}
                   placeholder="e.g. Harleen Kaur, London"
                   className="field w-full text-xs"
@@ -298,7 +322,10 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
               {/* Reviewer Email */}
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wider block mb-1 text-foreground">
-                  Your Email <span className="text-[10px] text-muted-foreground font-normal lowercase">(optional, kept confidential)</span>
+                  Your Email{" "}
+                  <span className="text-[10px] text-muted-foreground font-normal lowercase">
+                    (optional, kept confidential)
+                  </span>
                 </label>
                 <input
                   type="email"
@@ -317,6 +344,7 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
                 <input
                   type="text"
                   value={title}
+                  maxLength={150}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="e.g. Gorgeous embroidery and perfect fit"
                   className="field w-full text-xs"
@@ -332,6 +360,7 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
                   required
                   rows={4}
                   value={comment}
+                  maxLength={2000}
                   onChange={(e) => setComment(e.target.value)}
                   placeholder="Tell us what you liked about the fabric, custom sizing, colour, and finish..."
                   className="field w-full resize-y text-xs"
@@ -382,9 +411,7 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
                     style={{ width: `${percentage}%` }}
                   />
                 </div>
-                <span className="w-8 text-right text-[0.68rem] tabular-nums">
-                  {percentage}%
-                </span>
+                <span className="w-8 text-right text-[0.68rem] tabular-nums">{percentage}%</span>
               </div>
             ))}
           </div>
@@ -407,7 +434,8 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
               <MessageSquare className="size-8 mx-auto text-muted-foreground/60 mb-3" />
               <h3 className="font-serif text-lg text-foreground">No customer reviews yet</h3>
               <p className="text-xs text-muted-foreground max-w-sm mx-auto mt-1 mb-4">
-                Be the first to review {productName} and share your experience with custom tailoring.
+                Be the first to review {productName} and share your experience with custom
+                tailoring.
               </p>
               <button
                 type="button"
@@ -450,9 +478,7 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
                   </h4>
                 )}
 
-                <p className="text-xs text-muted-foreground leading-relaxed mb-3">
-                  {rev.comment}
-                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed mb-3">{rev.comment}</p>
 
                 <div className="text-[0.68rem] font-medium text-foreground/80 flex items-center gap-1">
                   <span>By</span>
