@@ -157,7 +157,7 @@ function Home() {
               personalised details — for everyday elegance, special occasions and unforgettable
               bridal moments.
             </p>
-            <div className="mt-6 sm:mt-9 flex flex-col min-[420px]:flex-row gap-3 w-full sm:w-auto">
+            <div className="mt-6 sm:mt-9 flex flex-col min-[420px]:flex-row min-[420px]:flex-wrap gap-3 w-full sm:w-auto">
               <Link to="/collections" className="btn-primary text-center">
                 Shop Collection
               </Link>
@@ -237,7 +237,7 @@ function Home() {
               Heirloom embroidery, rich fabrics and a fit made only for you. Every bridal outfit is
               personally designed with you from first sketch to final stitch.
             </p>
-            <div className="mt-6 sm:mt-9 flex flex-col min-[420px]:flex-row gap-3">
+            <div className="mt-6 sm:mt-9 flex flex-col min-[420px]:flex-row min-[420px]:flex-wrap gap-3">
               <Link
                 to="/collections/$slug"
                 params={{ slug: "bridal" }}
@@ -265,7 +265,7 @@ function Home() {
               Choose your preferred design, fabric, colour, embroidery and finishing details. We
               create personalised Indian outfits around your style and measurements.
             </p>
-            <div className="mt-6 sm:mt-9 flex flex-col min-[420px]:flex-row justify-center gap-3 w-full sm:w-auto">
+            <div className="mt-6 sm:mt-9 flex flex-col min-[420px]:flex-row min-[420px]:flex-wrap justify-center gap-3 w-full sm:w-auto">
               <Link to="/custom-designs" className="btn-primary text-center">
                 Start Your Custom Design
               </Link>

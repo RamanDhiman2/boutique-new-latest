@@ -132,7 +132,7 @@ function RootComponent() {
       <AuthProvider>
         <CartProvider>
           <Header />
-          <main className="min-h-[70vh] w-full overflow-x-hidden">
+          <main className="min-h-[70vh] w-full overflow-x-clip">
             <Outlet />
           </main>
           <Footer />

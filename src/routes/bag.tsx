@@ -49,8 +49,8 @@ function Bag() {
           </Link>
         </div>
       ) : (
-        <div className="grid md:grid-cols-[1fr_320px] lg:grid-cols-[1fr_350px] gap-8 lg:gap-12">
-          <div>
+        <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_320px] lg:grid-cols-[minmax(0,1fr)_350px] gap-8 lg:gap-12">
+          <div className="min-w-0">
             <div className="flex items-center gap-3 pb-4 border-b">
               <input
                 type="checkbox"
