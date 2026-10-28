@@ -1,3 +1,4 @@
+import { useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "./supabase";
 import {
@@ -13,10 +14,7 @@ import {
  */
 export async function fetchCategoriesFromSupabase(): Promise<Category[]> {
   try {
-    const { data, error } = await supabase
-      .from("categories")
-      .select("*")
-      .eq("is_active", true);
+    const { data, error } = await supabase.from("categories").select("*").eq("is_active", true);
 
     if (error || !data || data.length === 0) {
       return staticCategories;
@@ -42,49 +40,72 @@ export async function fetchCategoriesFromSupabase(): Promise<Category[]> {
 }
 
 /**
- * Fetch products from Supabase with graceful fallback to static catalog
+ * Fetch products from Supabase (the source of truth managed in the admin panel).
+ * Built-in photos and copy from the static catalog fill any gaps, and the static
+ * catalog is used as a whole only when Supabase cannot be reached.
  */
-export async function fetchProductsFromSupabase(categorySlug?: string): Promise<Product[]> {
+export async function fetchProductsFromSupabase(
+  categorySlug?: string,
+  options: { includeInactive?: boolean } = {},
+): Promise<Product[]> {
   try {
-    let query = supabase.from("products").select("*").eq("is_active", true);
+    const base = supabase.from("products").select("*");
+    const { data, error } = options.includeInactive ? await base : await base.eq("is_active", true);
 
-    const { data, error } = await query;
-
-    if (error || !data || data.length === 0) {
+    if (error || !Array.isArray(data)) {
       return categorySlug ? staticProductsIn(categorySlug) : staticProducts;
     }
 
-    const mappedProducts: Product[] = (data as any[]).map((row) => {
-      const localProd = staticProducts.find((p) => p.id === row.id);
-      return {
-        id: row.id,
-        name: row.name,
-        price: Number(row.price),
-        colour: row.colour || localProd?.colour || "Custom",
-        category: row.category || localProd?.category || "shop-by-occasion",
-        images: Array.isArray(row.images) && row.images.length > 0 ? row.images : localProd?.images || [],
-        sizes: Array.isArray(row.sizes) && row.sizes.length > 0 ? row.sizes : localProd?.sizes || ["Custom"],
-        customisable: row.customisable ?? localProd?.customisable ?? true,
-        description: row.description || localProd?.description || "",
-        soldOut: Boolean(row.is_sold_out ?? localProd?.soldOut),
-        isUpcoming: Boolean(row.is_upcoming ?? localProd?.isUpcoming),
-      };
-    });
-
-    if (!categorySlug) {
-      return mappedProducts;
-    }
-
-    if (categorySlug === "sold-out" || categorySlug === "sold-out-products") {
-      return mappedProducts.filter((p) => p.soldOut || p.category === categorySlug);
-    }
-
-    return mappedProducts.filter((p) => p.category === categorySlug);
+    const mappedProducts = sortProducts((data as any[]).map(mapProductRow));
+    return categorySlug ? filterByCategory(mappedProducts, categorySlug) : mappedProducts;
   } catch (err) {
     console.warn("Falling back to local products catalog:", err);
     return categorySlug ? staticProductsIn(categorySlug) : staticProducts;
   }
 }
+
+export function mapProductRow(row: any): Product {
+  const localProd = staticProducts.find((p) => p.id === row.id);
+  const dbImages = Array.isArray(row.images)
+    ? row.images.filter((i: unknown) => typeof i === "string" && i)
+    : [];
+  return {
+    id: row.id,
+    name: row.name,
+    price: Number(row.price),
+    colour: row.colour || localProd?.colour || "",
+    category: row.category || localProd?.category || "shop-by-occasion",
+    images: dbImages.length > 0 ? dbImages : localProd?.images || [],
+    sizes:
+      Array.isArray(row.sizes) && row.sizes.length > 0 ? row.sizes : localProd?.sizes || ["Custom"],
+    customisable: row.customisable ?? localProd?.customisable ?? true,
+    description: row.description || localProd?.description || "",
+    soldOut: Boolean(row.is_sold_out),
+    isUpcoming: Boolean(row.is_upcoming),
+    isActive: row.is_active !== false,
+    hasCustomImages: dbImages.length > 0,
+  };
+}
+
+/** Newest admin-added products first, then the original catalogue order. */
+function sortProducts(list: Product[]): Product[] {
+  const staticIndex = new Map(staticProducts.map((p, i) => [p.id, i]));
+  return [...list].sort((a, b) => (staticIndex.get(a.id) ?? -1) - (staticIndex.get(b.id) ?? -1));
+}
+
+export function filterByCategory(list: Product[], categorySlug: string): Product[] {
+  if (categorySlug === "sold-out" || categorySlug === "sold-out-products") {
+    return list.filter((p) => p.soldOut || p.category === categorySlug);
+  }
+  return list.filter((p) => p.category === categorySlug);
+}
+
+/** Shared cache entry for the public product list (also used by route loaders). */
+export const productsQueryOptions = {
+  queryKey: ["catalog", "products", "all"] as const,
+  queryFn: () => fetchProductsFromSupabase(),
+  staleTime: 1000 * 60 * 5,
+};
 
 /**
  * React Hook for dynamic categories with Supabase sync and instant static fallback
@@ -93,7 +114,7 @@ export function useCategoriesQuery() {
   return useQuery<Category[]>({
     queryKey: ["catalog", "categories"],
     queryFn: fetchCategoriesFromSupabase,
-    initialData: staticCategories,
+    placeholderData: staticCategories,
     staleTime: 1000 * 60 * 5,
   });
 }
@@ -102,11 +123,10 @@ export function useCategoriesQuery() {
  * React Hook for dynamic products in a category
  */
 export function useCategoryProductsQuery(categorySlug: string) {
-  return useQuery<Product[]>({
-    queryKey: ["catalog", "products", categorySlug],
-    queryFn: () => fetchProductsFromSupabase(categorySlug),
-    initialData: staticProductsIn(categorySlug),
-    staleTime: 1000 * 60 * 5,
+  return useQuery({
+    ...productsQueryOptions,
+    placeholderData: staticProducts,
+    select: (list: Product[]) => filterByCategory(list, categorySlug),
   });
 }
 
@@ -114,10 +134,21 @@ export function useCategoryProductsQuery(categorySlug: string) {
  * React Hook for all products
  */
 export function useAllProductsQuery() {
-  return useQuery<Product[]>({
-    queryKey: ["catalog", "products", "all"],
-    queryFn: () => fetchProductsFromSupabase(),
-    initialData: staticProducts,
-    staleTime: 1000 * 60 * 5,
+  return useQuery({
+    ...productsQueryOptions,
+    placeholderData: staticProducts,
   });
+}
+
+/**
+ * Looks up a product by id for order history and admin screens: live data first,
+ * then the static catalogue (so hidden or old products still show a name/photo).
+ */
+export function useProductLookup() {
+  const { data = staticProducts } = useAllProductsQuery();
+  return useCallback(
+    (id: string): Product | undefined =>
+      data.find((p) => p.id === id) ?? staticProducts.find((p) => p.id === id),
+    [data],
+  );
 }

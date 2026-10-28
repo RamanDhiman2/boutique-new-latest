@@ -73,12 +73,6 @@ serve(async (req) => {
           status: 400,
         })
       }
-      if (item.product_id === 'elegant-yellow-cream-suit') {
-        return new Response(JSON.stringify({ error: 'Product "Elegant Yellow & Cream Suit" is sold out and unavailable for purchase' }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 400,
-        })
-      }
     }
 
     // 3. Create or reuse order via RPC

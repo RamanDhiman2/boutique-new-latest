@@ -8,19 +8,23 @@ import {
   Loader2,
   ShieldAlert,
   ArrowLeft,
+  Shirt,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { fetchAdminOrders, useIsAdmin } from "@/lib/admin";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminOrders } from "@/components/admin/AdminOrders";
 import { AdminReviews } from "@/components/admin/AdminReviews";
+import { AdminProducts } from "@/components/admin/AdminProducts";
 
-type AdminTab = "dashboard" | "orders" | "reviews";
+type AdminTab = "dashboard" | "orders" | "products" | "reviews";
 
 export const Route = createFileRoute("/admin")({
   validateSearch: (search: Record<string, unknown>): { tab?: AdminTab } => {
     const tab = search["tab"];
-    return tab === "orders" || tab === "reviews" || tab === "dashboard" ? { tab } : {};
+    return tab === "orders" || tab === "products" || tab === "reviews" || tab === "dashboard"
+      ? { tab }
+      : {};
   },
   head: () => ({
     meta: [
@@ -34,6 +38,7 @@ export const Route = createFileRoute("/admin")({
 const TABS: { id: AdminTab; label: string; icon: typeof Package }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "orders", label: "Orders", icon: Package },
+  { id: "products", label: "Products", icon: Shirt },
   { id: "reviews", label: "Reviews", icon: MessageSquare },
 ];
 
@@ -124,11 +129,11 @@ function AdminPage() {
         })}
       </nav>
 
-      {ordersQuery.isError && tab !== "reviews" ? (
+      {ordersQuery.isError && tab !== "reviews" && tab !== "products" ? (
         <div className="p-6 border border-red-200 bg-red-50 rounded-md text-sm text-red-800">
           Could not load orders: {(ordersQuery.error as Error).message}
         </div>
-      ) : ordersQuery.isLoading && tab !== "reviews" ? (
+      ) : ordersQuery.isLoading && tab !== "reviews" && tab !== "products" ? (
         <div className="py-20 flex justify-center text-muted-foreground">
           <Loader2 className="size-5 animate-spin" />
         </div>
@@ -139,6 +144,8 @@ function AdminPage() {
         />
       ) : tab === "orders" ? (
         <AdminOrders orders={orders} onChanged={() => ordersQuery.refetch()} />
+      ) : tab === "products" ? (
+        <AdminProducts />
       ) : (
         <AdminReviews />
       )}

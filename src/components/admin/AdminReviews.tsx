@@ -2,12 +2,13 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, Search, Star, Trash2, BadgeCheck } from "lucide-react";
 import { toast } from "sonner";
-import { products } from "@/lib/catalog";
+import { useProductLookup } from "@/lib/catalogService";
 import { deleteReview, fetchAllReviews } from "@/lib/admin";
 
 type RatingFilter = "all" | "low" | "verified";
 
 export function AdminReviews() {
+  const findProduct = useProductLookup();
   const reviewsQuery = useQuery({ queryKey: ["admin-reviews"], queryFn: fetchAllReviews });
   const [filter, setFilter] = useState<RatingFilter>("all");
   const [query, setQuery] = useState("");
@@ -22,12 +23,12 @@ export function AdminReviews() {
       if (filter === "low" && r.rating > 3) return false;
       if (filter === "verified" && !r.verified_purchase) return false;
       if (!q) return true;
-      const productName = products.find((p) => p.id === r.product_id)?.name || r.product_id;
+      const productName = findProduct(r.product_id)?.name || r.product_id;
       return [r.author_name, r.title, r.comment, productName].some((v) =>
         v?.toLowerCase().includes(q),
       );
     });
-  }, [reviews, filter, query]);
+  }, [reviews, filter, query, findProduct]);
 
   const handleDelete = async (id: string) => {
     setDeletingId(id);
@@ -107,7 +108,7 @@ export function AdminReviews() {
       ) : (
         <ul className="space-y-3">
           {visible.map((r) => {
-            const productName = products.find((p) => p.id === r.product_id)?.name || r.product_id;
+            const productName = findProduct(r.product_id)?.name || r.product_id;
             return (
               <li key={r.id} className="bg-white border border-black/10 rounded-md p-4 sm:p-5">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">

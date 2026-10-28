@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { categories, productsIn } from "@/lib/catalog";
-import { useCategoriesQuery } from "@/lib/catalogService";
+import { categories } from "@/lib/catalog";
+import { filterByCategory, useAllProductsQuery, useCategoriesQuery } from "@/lib/catalogService";
 import { useReveal, PageHeader } from "@/components/site/Chrome";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
 import { ArrowRight, Sparkles } from "lucide-react";
@@ -26,6 +26,7 @@ export const Route = createFileRoute("/collections/")({
 
 function CollectionsIndexPage() {
   const { data: categoriesList = categories } = useCategoriesQuery();
+  const { data: allProducts = [] } = useAllProductsQuery();
   useReveal();
 
   return (
@@ -45,7 +46,7 @@ function CollectionsIndexPage() {
         {/* Categories Grid (Exclusively Categories - No Individual Products) */}
         <div className="mt-8 sm:mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8 lg:gap-10">
           {categoriesList.map((c, index) => {
-            const count = productsIn(c.slug).length;
+            const count = filterByCategory(allProducts, c.slug).length;
             const isFeatured = index === 0; // Bridal as featured luxury card
 
             return (
@@ -54,7 +55,9 @@ function CollectionsIndexPage() {
                 to="/collections/$slug"
                 params={{ slug: c.slug }}
                 className={`group relative flex flex-col justify-end overflow-hidden rounded-sm border border-black/10 bg-black transition-all duration-500 hover:shadow-2xl hover:border-gold/40 ${
-                  isFeatured ? "md:col-span-2 lg:col-span-2 min-h-[360px] sm:min-h-[460px] md:min-h-[540px]" : "min-h-[300px] sm:min-h-[380px] lg:min-h-[420px]"
+                  isFeatured
+                    ? "md:col-span-2 lg:col-span-2 min-h-[360px] sm:min-h-[460px] md:min-h-[540px]"
+                    : "min-h-[300px] sm:min-h-[380px] lg:min-h-[420px]"
                 }`}
               >
                 {/* Background Category Image */}
@@ -86,9 +89,13 @@ function CollectionsIndexPage() {
                     {c.tagline}
                   </span>
 
-                  <h2 className={`font-serif tracking-tight text-white mb-2 sm:mb-3 transition-transform duration-300 group-hover:translate-x-1 ${
-                    isFeatured ? "text-2xl sm:text-3xl md:text-5xl" : "text-xl sm:text-2xl md:text-3xl"
-                  }`}>
+                  <h2
+                    className={`font-serif tracking-tight text-white mb-2 sm:mb-3 transition-transform duration-300 group-hover:translate-x-1 ${
+                      isFeatured
+                        ? "text-2xl sm:text-3xl md:text-5xl"
+                        : "text-xl sm:text-2xl md:text-3xl"
+                    }`}
+                  >
                     {c.name}
                   </h2>
 
@@ -98,9 +105,7 @@ function CollectionsIndexPage() {
 
                   <div className="inline-flex items-center gap-2 text-[10px] sm:text-xs uppercase tracking-widest font-semibold text-white/90 group-hover:text-gold transition-colors">
                     <span>
-                      {c.slug === "sold-out"
-                        ? "View Archived Pieces"
-                        : "Explore Collection"}
+                      {c.slug === "sold-out" ? "View Archived Pieces" : "Explore Collection"}
                     </span>
                     <ArrowRight className="size-3.5 transition-transform duration-300 group-hover:translate-x-1.5" />
                   </div>

@@ -116,6 +116,10 @@ export type Product = {
   description: string;
   soldOut?: boolean;
   isUpcoming?: boolean;
+  /** false when hidden in the admin panel (only admins ever receive these) */
+  isActive?: boolean;
+  /** true when the photos come from the admin panel rather than the built-in set */
+  hasCustomImages?: boolean;
 };
 
 const S = ["XS", "S", "M", "L", "XL", "Custom"];

@@ -252,6 +252,8 @@ export interface SingleResult<T = Record<string, unknown>> {
 }
 
 // In-memory / localStorage fallback for seamless local & preview execution
+const mockUploads = new Map<string, string>();
+
 function createMockSupabase() {
   const isBrowser = typeof window !== "undefined";
 
@@ -833,7 +835,33 @@ function createMockSupabase() {
         return { data: null, error: null };
       }
 
+      if (funcName === "admin_delete_product") {
+        const list = getStorage<Record<string, unknown>[]>("products", []);
+        setStorage(
+          "products",
+          list.filter((p) => p["id"] !== args["p_product_id"]),
+        );
+        return { data: null, error: null };
+      }
+
       return { data: null, error: null };
+    },
+    // Local dev mock: uploads become in-memory object URLs (gone after a reload)
+    storage: {
+      from(_bucket: string) {
+        return {
+          async upload(path: string, file: Blob, _options?: Record<string, unknown>) {
+            mockUploads.set(path, URL.createObjectURL(file));
+            return { data: { path }, error: null as AuthErrorLike | null };
+          },
+          getPublicUrl(path: string) {
+            return { data: { publicUrl: mockUploads.get(path) || path } };
+          },
+          async remove(_paths: string[]) {
+            return { data: null, error: null as AuthErrorLike | null };
+          },
+        };
+      },
     },
     functions: {
       async invoke(_funcName: string, _options?: { body?: any }) {

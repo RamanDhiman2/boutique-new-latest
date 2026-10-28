@@ -1,7 +1,8 @@
 import { useMemo, useState } from "react";
 import { Search, Loader2, Copy, Mail, Phone, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
-import { products, gbp } from "@/lib/catalog";
+import { gbp } from "@/lib/catalog";
+import { useProductLookup } from "@/lib/catalogService";
 import {
   ADMIN_ORDER_STATUSES,
   ADMIN_STATUS_LABELS,
@@ -246,6 +247,7 @@ export function AdminOrders({ orders, onChanged }: AdminOrdersProps) {
 }
 
 function OrderDetail({ order, onSaved }: { order: AdminOrder; onSaved: () => void }) {
+  const findProduct = useProductLookup();
   const addr = (order.shipping_address || {}) as Address;
   const initialStatus = (
     ADMIN_ORDER_STATUSES.includes(order.status as AdminOrderStatus) ? order.status : "processing"
@@ -341,7 +343,7 @@ function OrderDetail({ order, onSaved }: { order: AdminOrder; onSaved: () => voi
           <h3 className="text-[11px] uppercase tracking-wider text-muted-foreground mb-2">Items</h3>
           <ul className="divide-y divide-black/5 border-y border-black/5">
             {(order.order_items || []).map((it) => {
-              const prod = products.find((p) => p.id === it.product_id);
+              const prod = findProduct(it.product_id);
               return (
                 <li key={it.id} className="py-3 flex gap-3">
                   <div className="w-12 h-16 shrink-0 bg-muted rounded-sm overflow-hidden">

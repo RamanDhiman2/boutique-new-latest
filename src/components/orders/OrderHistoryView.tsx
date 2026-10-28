@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { products, gbp, waLink } from "@/lib/catalog";
+import { gbp, waLink } from "@/lib/catalog";
+import { useProductLookup } from "@/lib/catalogService";
 import { useCart } from "@/lib/cart";
 import { supabase, type OrderRecord, type OrderItemRecord } from "@/lib/supabase";
 import { toast } from "sonner";
@@ -37,6 +38,7 @@ interface OrderHistoryViewProps {
 }
 
 export function OrderHistoryView({ orders: allOrders, onOrderCancelled }: OrderHistoryViewProps) {
+  const findProduct = useProductLookup();
   const { add } = useCart();
   const navigate = useNavigate();
 
@@ -84,14 +86,14 @@ export function OrderHistoryView({ orders: allOrders, onOrderCancelled }: OrderH
 
       const orderMatches = order.id.toLowerCase().includes(q);
       const itemMatches = order.order_items?.some((item) => {
-        const prod = products.find((p) => p.id === item.product_id);
+        const prod = findProduct(item.product_id);
         const name = prod?.name || item.product_id;
         return name.toLowerCase().includes(q) || item.size.toLowerCase().includes(q);
       });
 
       return orderMatches || itemMatches;
     });
-  }, [orders, statusFilter, searchQuery]);
+  }, [orders, statusFilter, searchQuery, findProduct]);
 
   // Counts for tabs
   const counts = useMemo(() => {
@@ -114,7 +116,7 @@ export function OrderHistoryView({ orders: allOrders, onOrderCancelled }: OrderH
 
   // Buy Again handler
   const handleBuyAgain = (item: OrderItemRecord) => {
-    const prod = products.find((p) => p.id === item.product_id);
+    const prod = findProduct(item.product_id);
     if (prod?.soldOut) {
       toast.error(`${prod.name} is currently sold out and cannot be reordered.`);
       return;
@@ -222,7 +224,7 @@ export function OrderHistoryView({ orders: allOrders, onOrderCancelled }: OrderH
 
       // Order Items Table
       const tableRows = (order.order_items || []).map((it) => {
-        const prod = products.find((p) => p.id === it.product_id);
+        const prod = findProduct(it.product_id);
         const name = prod?.name || it.product_id;
         return [
           name,
@@ -507,7 +509,7 @@ export function OrderHistoryView({ orders: allOrders, onOrderCancelled }: OrderH
                 {/* Items */}
                 <ul className="px-4 sm:px-6 divide-y divide-black/5 border-t border-black/5">
                   {items.map((item) => {
-                    const prod = products.find((p) => p.id === item.product_id);
+                    const prod = findProduct(item.product_id);
                     const itemImage = prod?.images?.[0] || "";
                     const itemName = prod?.name || item.product_id;
 

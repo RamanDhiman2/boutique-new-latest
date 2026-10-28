@@ -1,5 +1,14 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { products, type Product } from "./catalog";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { products as staticProducts, type Product } from "./catalog";
+import { useAllProductsQuery } from "./catalogService";
 
 type Line = { id: string; size: string; qty: number; selected?: boolean };
 type Ctx = {
@@ -25,6 +34,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<Line[]>([]);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
+
+  // Live products (prices, sold out) from Supabase; the static catalogue is only a placeholder
+  const { data: products = staticProducts } = useAllProductsQuery();
+  const productsRef = useRef(products);
+  productsRef.current = products;
 
   useEffect(() => {
     try {
@@ -58,7 +72,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const actions = useMemo(
     () => ({
       add: (id: string, size: string) => {
-        const prod = products.find((p) => p.id === id);
+        const prod = productsRef.current.find((p) => p.id === id);
         if (prod?.soldOut || prod?.isUpcoming) return;
 
         setLines((ls) => {

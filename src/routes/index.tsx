@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Globe, Instagram, Loader2, Mail, Ruler, Scissors, Sparkles, Star } from "lucide-react";
 import { useState } from "react";
-import { categories, heroImage, productsIn, products } from "@/lib/catalog";
+import { categories, heroImage, products as staticProducts } from "@/lib/catalog";
+import { useAllProductsQuery } from "@/lib/catalogService";
 import { ProductCard } from "@/components/site/ProductCard";
 import { useReveal } from "@/components/site/Chrome";
 import { sendNewsletterSubscription, isEmailJSConfigured } from "@/lib/email";
@@ -129,6 +130,7 @@ const reviews = [
 ];
 
 function Home() {
+  const { data: products = staticProducts } = useAllProductsQuery();
   useReveal();
   return (
     <>
@@ -144,7 +146,9 @@ function Home() {
         <div className="absolute inset-0 bg-gradient-to-r from-ink/80 via-ink/40 to-transparent" />
         <div className="relative mx-auto max-w-[1500px] h-full px-4 sm:px-6 lg:px-10 flex items-center">
           <div className="max-w-xl text-ink-foreground animate-rise">
-            <div className="eyebrow text-gold text-[0.65rem] sm:text-[0.7rem]">Charminng Chic · UK</div>
+            <div className="eyebrow text-gold text-[0.65rem] sm:text-[0.7rem]">
+              Charminng Chic · UK
+            </div>
             <h1 className="mt-3 sm:mt-5 text-4xl min-[400px]:text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-[1.02] sm:leading-[0.95] break-words">
               Tradition, <em className="text-gold">Tailored</em> Your Way.
             </h1>
@@ -188,7 +192,15 @@ function Home() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-transparent to-transparent" />
                 <div className="absolute bottom-0 p-3 sm:p-5 text-ink-foreground">
-                  <h3 className={i === 0 ? "text-2xl sm:text-4xl md:text-5xl leading-tight" : "text-lg sm:text-2xl md:text-3xl leading-tight"}>{c.name}</h3>
+                  <h3
+                    className={
+                      i === 0
+                        ? "text-2xl sm:text-4xl md:text-5xl leading-tight"
+                        : "text-lg sm:text-2xl md:text-3xl leading-tight"
+                    }
+                  >
+                    {c.name}
+                  </h3>
                   <div className="eyebrow !text-[0.55rem] sm:!text-[0.58rem] mt-1.5 sm:mt-2 opacity-80 group-hover:text-gold transition-colors">
                     Shop now →
                   </div>
@@ -226,7 +238,11 @@ function Home() {
               personally designed with you from first sketch to final stitch.
             </p>
             <div className="mt-6 sm:mt-9 flex flex-col min-[420px]:flex-row gap-3">
-              <Link to="/collections/$slug" params={{ slug: "bridal" }} className="btn-outline text-center">
+              <Link
+                to="/collections/$slug"
+                params={{ slug: "bridal" }}
+                className="btn-outline text-center"
+              >
                 Explore Bridal
               </Link>
               <Link to="/contact" className="btn-outline text-center">
@@ -273,8 +289,12 @@ function Home() {
           return (
             <div key={t as string} className="reveal p-2 sm:p-4">
               <I className="size-6 sm:size-7 mx-auto text-primary" strokeWidth={1} />
-              <div className="mt-3 sm:mt-4 font-serif text-lg sm:text-2xl leading-snug">{t as string}</div>
-              <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">{d as string}</p>
+              <div className="mt-3 sm:mt-4 font-serif text-lg sm:text-2xl leading-snug">
+                {t as string}
+              </div>
+              <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                {d as string}
+              </p>
             </div>
           );
         })}
@@ -293,9 +313,13 @@ function Home() {
                         <Star key={i} className="size-3.5 fill-current" />
                       ))}
                     </div>
-                    <blockquote className="mt-4 sm:mt-6 font-serif text-lg sm:text-xl md:text-2xl leading-snug">“{q}”</blockquote>
+                    <blockquote className="mt-4 sm:mt-6 font-serif text-lg sm:text-xl md:text-2xl leading-snug">
+                      “{q}”
+                    </blockquote>
                   </div>
-                  <figcaption className="mt-6 eyebrow text-muted-foreground text-[0.62rem] sm:text-[0.68rem]">{n}</figcaption>
+                  <figcaption className="mt-6 eyebrow text-muted-foreground text-[0.62rem] sm:text-[0.68rem]">
+                    {n}
+                  </figcaption>
                 </figure>
               </CarouselItem>
             ))}
@@ -431,8 +455,14 @@ function Section({
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 sm:gap-6 mb-8 sm:mb-10 reveal">
         <div className="max-w-2xl">
           <div className="eyebrow text-primary text-[0.65rem] sm:text-[0.7rem]">{eyebrow}</div>
-          <h2 className="mt-2 sm:mt-3 text-2xl sm:text-3xl md:text-4xl lg:text-5xl break-words leading-tight">{title}</h2>
-          {text && <p className="mt-3 sm:mt-4 text-sm sm:text-base text-muted-foreground leading-relaxed">{text}</p>}
+          <h2 className="mt-2 sm:mt-3 text-2xl sm:text-3xl md:text-4xl lg:text-5xl break-words leading-tight">
+            {title}
+          </h2>
+          {text && (
+            <p className="mt-3 sm:mt-4 text-sm sm:text-base text-muted-foreground leading-relaxed">
+              {text}
+            </p>
+          )}
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </div>
@@ -473,20 +503,29 @@ function Newsletter() {
 
   return (
     <section className="mx-auto max-w-2xl px-4 sm:px-6 pt-16 sm:pt-22 lg:pt-28 pb-10 text-center reveal">
-      <div className="eyebrow text-primary text-[0.65rem] sm:text-[0.7rem]">The SohniMutiyaar Circle</div>
-      <h2 className="mt-3 sm:mt-4 text-2xl sm:text-3xl md:text-4xl lg:text-5xl break-words leading-tight">New collections, first.</h2>
+      <div className="eyebrow text-primary text-[0.65rem] sm:text-[0.7rem]">
+        The SohniMutiyaar Circle
+      </div>
+      <h2 className="mt-3 sm:mt-4 text-2xl sm:text-3xl md:text-4xl lg:text-5xl break-words leading-tight">
+        New collections, first.
+      </h2>
       <p className="mt-3 sm:mt-4 text-sm sm:text-base text-muted-foreground max-w-lg mx-auto">
         Be the first to know about new arrivals, bridal edits and exclusive offers.
       </p>
       {done ? (
         <div className="mt-6 sm:mt-8 space-y-2 animate-rise">
-          <p className="font-serif text-xl sm:text-2xl text-primary">Thank you — welcome to the circle.</p>
+          <p className="font-serif text-xl sm:text-2xl text-primary">
+            Thank you — welcome to the circle.
+          </p>
           <p className="text-xs text-muted-foreground">
             We will send our curated bridal edits and announcements directly to your inbox.
           </p>
         </div>
       ) : (
-        <form onSubmit={handleSubscribe} className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 max-w-md mx-auto">
+        <form
+          onSubmit={handleSubscribe}
+          className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+        >
           <input
             required
             type="email"
