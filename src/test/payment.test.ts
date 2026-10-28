@@ -9,7 +9,7 @@ const mockCatalog = [
 ];
 
 function calculateAuthoritativeTotal(
-  items: Array<{ product_id: string; quantity: number; client_price?: number }>
+  items: Array<{ product_id: string; quantity: number; client_price?: number }>,
 ): { total: number; amountInPence: number } {
   if (!items || items.length === 0) {
     throw new Error("Order must contain at least one item");
@@ -46,17 +46,17 @@ describe("Payment Flow - Input & Price Validation", () => {
 
   it("rejects items with invalid quantities (< 1 or > 100)", () => {
     expect(() =>
-      calculateAuthoritativeTotal([{ product_id: "elegant-maroon-suit", quantity: 0 }])
+      calculateAuthoritativeTotal([{ product_id: "elegant-maroon-suit", quantity: 0 }]),
     ).toThrow("Invalid quantity 0");
 
     expect(() =>
-      calculateAuthoritativeTotal([{ product_id: "elegant-maroon-suit", quantity: 101 }])
+      calculateAuthoritativeTotal([{ product_id: "elegant-maroon-suit", quantity: 101 }]),
     ).toThrow("Invalid quantity 101");
   });
 
   it("rejects unknown product IDs", () => {
     expect(() =>
-      calculateAuthoritativeTotal([{ product_id: "tampered-product-999", quantity: 1 }])
+      calculateAuthoritativeTotal([{ product_id: "tampered-product-999", quantity: 1 }]),
     ).toThrow("Product not found in catalog: tampered-product-999");
   });
 
@@ -71,6 +71,54 @@ describe("Payment Flow - Input & Price Validation", () => {
     // Expected: 65*1 + 150*2 = 65 + 300 = 365 GBP -> 36500 pence
     expect(result.total).toBe(365);
     expect(result.amountInPence).toBe(36500);
+  });
+});
+
+describe("calculateOrderTotal (server pricing)", () => {
+  const dbProducts = [
+    { id: "elegant-maroon-suit", name: "Elegant Maroon Suit", price: 65, stock: 5 },
+    {
+      id: "elegant-firozi-heavy-suit",
+      name: "Elegant Firozi Heavy Suit",
+      price: "150",
+      stock: null,
+    },
+    { id: "unpriced-suit", name: "Unpriced Suit", price: null, stock: 5 },
+  ];
+  const line = (product_id: string, quantity: number) => ({ product_id, size: "M", quantity });
+
+  it("prices lines from the products table only", async () => {
+    const { calculateOrderTotal } = await import("@/server/payment");
+    const { lines, total } = calculateOrderTotal(
+      [line("elegant-maroon-suit", 1), line("elegant-firozi-heavy-suit", 2)],
+      dbProducts,
+    );
+    expect(total).toBe(365);
+    expect(lines.map((l) => l.price)).toEqual([65, 150]);
+  });
+
+  it("rejects products missing from the catalog instead of using a client price", async () => {
+    const { calculateOrderTotal } = await import("@/server/payment");
+    expect(() => calculateOrderTotal([line("tampered-product-999", 1)], dbProducts)).toThrow(
+      'Product "tampered-product-999" is not available',
+    );
+  });
+
+  it("rejects products without a valid price", async () => {
+    const { calculateOrderTotal } = await import("@/server/payment");
+    expect(() => calculateOrderTotal([line("unpriced-suit", 1)], dbProducts)).toThrow(
+      "has no valid price",
+    );
+  });
+
+  it.each([0, -1, 1.5, 101, Number.NaN])("rejects quantity %s", async (qty) => {
+    const { calculateOrderTotal } = await import("@/server/payment");
+    expect(() =>
+      calculateOrderTotal(
+        [line("elegant-maroon-suit", 2), line("elegant-firozi-heavy-suit", qty)],
+        dbProducts,
+      ),
+    ).toThrow("Invalid quantity");
   });
 });
 
@@ -177,9 +225,12 @@ describe("Webhook Concurrency & Idempotency Simulation", () => {
     const applyPaymentStatusUpdate = (
       existing: MockOrder,
       newStatus: string,
-      newPaymentStatus: "unpaid" | "captured" | "failed"
+      newPaymentStatus: "unpaid" | "captured" | "failed",
     ) => {
-      if (existing.payment_status === "captured" && (newPaymentStatus === "failed" || newPaymentStatus === "unpaid")) {
+      if (
+        existing.payment_status === "captured" &&
+        (newPaymentStatus === "failed" || newPaymentStatus === "unpaid")
+      ) {
         // Disallowed out-of-order transition
         return false;
       }
@@ -290,7 +341,11 @@ describe("Frontend Payment Submission & Order Status Verification Flow", () => {
     expect(pendingView.badge).toBe("Verifying with Gateway...");
 
     // 2. Authoritative state after Stripe webhook runs
-    const capturedOrder: OrderRecord = { id: "ord_1", payment_status: "captured", total_amount: 150 };
+    const capturedOrder: OrderRecord = {
+      id: "ord_1",
+      payment_status: "captured",
+      total_amount: 150,
+    };
     const capturedView = getOrderDisplayState(capturedOrder);
     expect(capturedView.state).toBe("confirmed");
     expect(capturedView.isPaid).toBe(true);
@@ -321,7 +376,7 @@ describe("Frontend Payment Submission & Order Status Verification Flow", () => {
       }
 
       expect(() => validateItemAvailability("elegant-yellow-cream-suit", true)).toThrow(
-        'Product "elegant-yellow-cream-suit" is currently sold out and cannot be purchased'
+        'Product "elegant-yellow-cream-suit" is currently sold out and cannot be purchased',
       );
       expect(validateItemAvailability("elegant-maroon-suit", false)).toBe(true);
     });
@@ -341,4 +396,3 @@ describe("Frontend Payment Submission & Order Status Verification Flow", () => {
     });
   });
 });
-

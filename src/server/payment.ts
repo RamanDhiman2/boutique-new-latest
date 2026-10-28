@@ -1,6 +1,65 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
+const MAX_ITEM_QUANTITY = 100;
+
+type CatalogProduct = {
+  id: string;
+  name?: string | null;
+  price?: number | string | null;
+  stock?: number | string | null;
+  is_sold_out?: boolean | null;
+};
+
+/**
+ * Validates cart lines and prices them strictly from the products table.
+ * Client-supplied prices are never used: unknown products, unpriced products
+ * and non-integer or out-of-range quantities are rejected.
+ */
+export function calculateOrderTotal(
+  items: Array<{ product_id: string; size: string; quantity: number }>,
+  dbProducts: CatalogProduct[],
+) {
+  const lines: Array<{ product_id: string; size: string; quantity: number; price: number }> = [];
+  let total = 0;
+
+  for (const it of items) {
+    if (!Number.isInteger(it.quantity) || it.quantity < 1 || it.quantity > MAX_ITEM_QUANTITY) {
+      throw new Error(`Invalid quantity ${it.quantity} for product ${it.product_id}`);
+    }
+
+    const prod = dbProducts.find((p) => p.id === it.product_id);
+    if (!prod) {
+      throw new Error(`Product "${it.product_id}" is not available`);
+    }
+
+    const isSoldOut =
+      prod.is_sold_out === true ||
+      (prod.stock !== null && prod.stock !== undefined && Number(prod.stock) <= 0) ||
+      it.product_id === "elegant-yellow-cream-suit";
+
+    if (isSoldOut) {
+      throw new Error(
+        `Product "${prod.name || it.product_id}" is currently sold out and cannot be purchased`,
+      );
+    }
+
+    const price = Number(prod.price);
+    if (prod.price == null || !Number.isFinite(price) || price <= 0) {
+      throw new Error(`Product "${prod.name || it.product_id}" has no valid price`);
+    }
+
+    lines.push({ ...it, price });
+    total += price * it.quantity;
+  }
+
+  if (total <= 0) {
+    throw new Error("Invalid order total");
+  }
+
+  return { lines, total };
+}
+
 export async function processPaymentIntentCreation({
   authHeader,
   address_id,
@@ -66,34 +125,19 @@ export async function processPaymentIntentCreation({
 
   // 1. Authoritative price lookup from products catalog
   const productIds = cleanItems.map((it) => it.product_id);
-  const { data: dbProducts } = await supabaseClient
+  const { data: dbProducts, error: productsError } = await supabaseClient
     .from("products")
     .select("id, name, price, stock, is_sold_out")
     .in("id", productIds);
 
-  let calculatedTotal = 0;
-  for (const it of cleanItems) {
-    const prod = dbProducts?.find((p) => p.id === it.product_id);
-    
-    const isSoldOut =
-      prod?.is_sold_out === true ||
-      (prod?.stock !== null && prod?.stock !== undefined && Number(prod.stock) <= 0) ||
-      it.product_id === "elegant-yellow-cream-suit";
-
-    if (isSoldOut) {
-      throw new Error(`Product "${prod?.name || it.product_id}" is currently sold out and cannot be purchased`);
-    }
-
-    const itemPrice =
-      prod?.price != null
-        ? Number(prod.price)
-        : Number(items.find((i) => i.product_id === it.product_id)?.price || 0);
-    calculatedTotal += itemPrice * it.quantity;
+  if (productsError) {
+    throw new Error("Unable to load products for pricing");
   }
 
-  if (calculatedTotal <= 0) {
-    throw new Error("Invalid order total");
-  }
+  const { lines: pricedItems, total: calculatedTotal } = calculateOrderTotal(
+    cleanItems,
+    dbProducts ?? [],
+  );
 
   // 2. Address Ownership Verification
   const { data: addrData } = await supabaseClient
@@ -118,7 +162,7 @@ export async function processPaymentIntentCreation({
       .limit(5);
 
     const match = existingOrders?.find(
-      (o) => (o.shipping_address as any)?.idempotency_key === idempotency_key
+      (o) => (o.shipping_address as any)?.idempotency_key === idempotency_key,
     );
 
     if (match) {
@@ -181,7 +225,7 @@ export async function processPaymentIntentCreation({
 
   const paymentIntent = await stripe.paymentIntents.create(
     createParams,
-    stripeIdempotencyKey ? { idempotencyKey: stripeIdempotencyKey } : undefined
+    stripeIdempotencyKey ? { idempotencyKey: stripeIdempotencyKey } : undefined,
   );
 
   // If no matching order was found, create or link order record to this payment_provider_id
@@ -209,7 +253,7 @@ export async function processPaymentIntentCreation({
           .limit(5);
 
         const found = recentOrders?.find(
-          (o) => (o.shipping_address as any)?.idempotency_key === idempotency_key
+          (o) => (o.shipping_address as any)?.idempotency_key === idempotency_key,
         );
         if (found && Number(found.total_amount) === calculatedTotal) {
           concurrentOrder = { id: found.id, total_amount: Number(found.total_amount) };
@@ -261,19 +305,13 @@ export async function processPaymentIntentCreation({
         } else {
           orderId = newOrder.id;
 
-          for (const it of cleanItems) {
-            const prod = dbProducts?.find((p) => p.id === it.product_id);
-            const itemPrice =
-              prod?.price != null
-                ? Number(prod.price)
-                : Number(items.find((i) => i.product_id === it.product_id)?.price || 0);
-
+          for (const it of pricedItems) {
             await supabaseClient.from("order_items").insert({
               order_id: orderId,
               product_id: it.product_id,
               size: it.size,
               quantity: it.quantity,
-              price: itemPrice,
+              price: it.price,
             });
           }
         }
