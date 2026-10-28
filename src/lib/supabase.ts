@@ -787,6 +787,52 @@ function createMockSupabase() {
         return { error: null };
       }
 
+      // Local dev mock only: any signed-in mock user is treated as an admin so the
+      // admin panel can be previewed without Supabase. Production uses is_admin().
+      if (funcName === "is_admin") {
+        return { data: Boolean(getSession()), error: null };
+      }
+
+      if (funcName === "admin_list_orders") {
+        const orders = getStorage<OrderRecord[]>("orders", []);
+        const email = getSession()?.user?.email ?? null;
+        const includeUnpaid = Boolean(args["p_include_unpaid"]);
+        return {
+          data: orders
+            .filter((o) => includeUnpaid || ["captured", "refunded"].includes(o.payment_status || ""))
+            .map((o) => ({ ...o, customer_email: email })),
+          error: null,
+        };
+      }
+
+      if (funcName === "admin_update_order") {
+        const orders = getStorage<OrderRecord[]>("orders", []);
+        const order = orders.find((o) => o.id === args["p_order_id"]);
+        if (!order) return { data: null, error: { message: "Order not found" } };
+        order.status = String(args["p_status"]);
+        const carrier = args["p_carrier"] as string | undefined;
+        const tracking = args["p_tracking_number"] as string | undefined;
+        if (carrier) order.carrier = carrier;
+        else delete order.carrier;
+        if (tracking) order.tracking_number = tracking;
+        else delete order.tracking_number;
+        if (order.status === "cancelled") {
+          order.cancellation_reason =
+            (args["p_cancellation_reason"] as string) || order.cancellation_reason || "Cancelled by store";
+        }
+        setStorage("orders", orders);
+        return { data: null, error: null };
+      }
+
+      if (funcName === "admin_delete_review") {
+        const reviews = getStorage<ProductReviewRecord[]>("product_reviews", []);
+        setStorage(
+          "product_reviews",
+          reviews.filter((r) => r.id !== args["p_review_id"]),
+        );
+        return { data: null, error: null };
+      }
+
       return { data: null, error: null };
     },
     functions: {

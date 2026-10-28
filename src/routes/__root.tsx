@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -83,8 +84,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     ],
     links: [
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", href: "/Maroon%20and%20Gold%20Monogram%20Fashion%20Logo.png", type: "image/png" },
-      { rel: "shortcut icon", href: "/Maroon%20and%20Gold%20Monogram%20Fashion%20Logo.png", type: "image/png" },
+      {
+        rel: "icon",
+        href: "/Maroon%20and%20Gold%20Monogram%20Fashion%20Logo.png",
+        type: "image/png",
+      },
+      {
+        rel: "shortcut icon",
+        href: "/Maroon%20and%20Gold%20Monogram%20Fashion%20Logo.png",
+        type: "image/png",
+      },
       { rel: "apple-touch-icon", href: "/Maroon%20and%20Gold%20Monogram%20Fashion%20Logo.png" },
       { rel: "icon", href: "/favicon.ico" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -117,6 +126,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const isAdminPage = useRouterState({ select: (s) => s.location.pathname.startsWith("/admin") });
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -126,7 +136,7 @@ function RootComponent() {
             <Outlet />
           </main>
           <Footer />
-          <WhatsAppFloatingButton />
+          {!isAdminPage && <WhatsAppFloatingButton />}
           <Toaster position="bottom-left" />
         </CartProvider>
       </AuthProvider>

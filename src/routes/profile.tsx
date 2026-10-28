@@ -21,9 +21,11 @@ import {
   Ruler,
   LogOut,
   ChevronRight,
+  ShieldCheck,
 } from "lucide-react";
 import { AddressForm, type AddressFormData } from "@/components/address/AddressForm";
 import { OrderHistoryView } from "@/components/orders/OrderHistoryView";
+import { useIsAdmin } from "@/lib/admin";
 
 export const Route = createFileRoute("/profile")({
   component: ProfilePage,
@@ -31,6 +33,7 @@ export const Route = createFileRoute("/profile")({
 
 function ProfilePage() {
   const { user, loading } = useAuth();
+  const { isAdmin } = useIsAdmin();
   const { clear } = useCart();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -456,6 +459,15 @@ function ProfilePage() {
               <Ruler className="size-4 hidden sm:block" />
               Measurements
             </button>
+            {isAdmin && (
+              <button
+                onClick={() => navigate({ to: "/admin" })}
+                className="flex items-center gap-2.5 whitespace-nowrap text-sm px-1 lg:px-3 py-3 lg:py-2.5 lg:rounded-sm border-b-2 lg:border-b-0 border-transparent text-[#6B2C3A] font-medium hover:underline lg:hover:no-underline lg:hover:bg-[#6B2C3A]/[0.06]"
+              >
+                <ShieldCheck className="size-4 hidden sm:block" />
+                Admin panel
+              </button>
+            )}
             <button
               onClick={handleLogout}
               className="flex items-center gap-2.5 whitespace-nowrap text-sm px-1 lg:px-3 py-3 lg:py-2.5 lg:rounded-sm border-b-2 lg:border-b-0 border-transparent text-destructive/80 hover:text-destructive lg:mt-2"
@@ -467,7 +479,7 @@ function ProfilePage() {
         </aside>
 
         {/* Content */}
-        <main className="min-w-0">
+        <section className="min-w-0">
           {activeTab === "dashboard" && (
             <div className="space-y-8">
               <div>
@@ -836,7 +848,7 @@ function ProfilePage() {
               )}
             </div>
           )}
-        </main>
+        </section>
       </div>
     </div>
   );
