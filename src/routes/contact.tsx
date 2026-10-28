@@ -7,6 +7,7 @@ import { WhatsAppIcon } from "@/components/site/WhatsAppButton";
 import { waLink } from "@/lib/catalog";
 import { sendContactEmail, isEmailJSConfigured } from "@/lib/email";
 import { toast } from "sonner";
+import { getSiteSettings } from "@/lib/siteSettingsStore";
 
 // Custom TikTok SVG since lucide-react doesn't include it natively
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -37,6 +38,7 @@ export const Route = createFileRoute("/contact")({
 });
 
 function Contact() {
+  const settings = getSiteSettings();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
@@ -141,10 +143,10 @@ function Contact() {
           <div>
             <div className="eyebrow text-primary mb-2">Email Us Directly</div>
             <a
-              href="mailto:Charminngchic@gmail.com"
+              href={`mailto:${settings.contactEmail}`}
               className="inline-flex items-center gap-2 font-serif text-lg sm:text-2xl hover:text-primary transition-colors break-all"
             >
-              <Mail className="size-5 sm:size-6 text-primary shrink-0" /> <span>Charminngchic@gmail.com</span>
+              <Mail className="size-5 sm:size-6 text-primary shrink-0" /> <span>{settings.contactEmail}</span>
             </a>
             <p className="text-xs sm:text-sm text-muted-foreground mt-2">
               Our team typically responds within 24 hours to assist with orders and custom
@@ -156,7 +158,7 @@ function Contact() {
             <div className="eyebrow text-primary mb-4">Follow Us</div>
             <div className="flex gap-4">
               <a
-                href="https://www.instagram.com/sohnimutiyaarofficial_?xtok=MWRxbTBram5uZG9udg=="
+                href={settings.instagramUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="p-3 bg-secondary hover:bg-secondary/80 transition-colors rounded-full"
@@ -165,7 +167,7 @@ function Contact() {
                 <Instagram className="size-5" />
               </a>
               <a
-                href="https://www.tiktok.com/@sohnimutiyaarofficial_?_r=1&_t=ZN-9ANTri79OHm"
+                href={settings.tiktokUrl}
                 target="_blank"
                 rel="noreferrer"
                 className="p-3 bg-secondary hover:bg-secondary/80 transition-colors rounded-full"

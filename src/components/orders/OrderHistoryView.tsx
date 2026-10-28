@@ -31,6 +31,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { formatWhatsappNumber, getSiteSettings } from "@/lib/siteSettingsStore";
 
 interface OrderHistoryViewProps {
   orders: OrderRecord[];
@@ -178,7 +179,11 @@ export function OrderHistoryView({ orders: allOrders, onOrderCancelled }: OrderH
       doc.setFontSize(9);
       doc.setTextColor(100, 100, 100);
       doc.text("By Charminng Chic · Luxury Indian Fashion & Tailoring", 14, 28);
-      doc.text("Email: Charminngchic@gmail.com | WhatsApp: +44 7393 070421", 14, 33);
+      doc.text(
+        `Email: ${getSiteSettings().contactEmail} | WhatsApp: ${formatWhatsappNumber(getSiteSettings().whatsappNumber)}`,
+        14,
+        33,
+      );
 
       // Invoice Title & Meta
       doc.setFont("helvetica", "bold");

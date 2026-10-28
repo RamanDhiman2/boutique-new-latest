@@ -3,6 +3,7 @@ import { Globe, Instagram, Loader2, Mail, Ruler, Scissors, Sparkles, Star } from
 import { useState } from "react";
 import { categories, heroImage, products as staticProducts } from "@/lib/catalog";
 import { useAllProductsQuery } from "@/lib/catalogService";
+import { getSiteSettings } from "@/lib/siteSettingsStore";
 import { ProductCard } from "@/components/site/ProductCard";
 import { useReveal } from "@/components/site/Chrome";
 import { sendNewsletterSubscription, isEmailJSConfigured } from "@/lib/email";
@@ -339,7 +340,7 @@ function Home() {
         action={
           <div className="flex flex-wrap items-center gap-2.5">
             <a
-              href={INSTAGRAM_URL}
+              href={getSiteSettings().instagramUrl}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full border border-border/80 bg-background hover:bg-[#E1306C]/10 hover:border-[#E1306C]/50 hover:text-[#E1306C] text-xs font-semibold tracking-wider transition-all shadow-xs cursor-pointer min-h-[40px]"
@@ -348,7 +349,7 @@ function Home() {
               <span>Instagram</span>
             </a>
             <a
-              href={TIKTOK_URL}
+              href={getSiteSettings().tiktokUrl}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full border border-border/80 bg-background hover:bg-foreground/10 hover:border-foreground/50 text-xs font-semibold tracking-wider transition-all shadow-xs cursor-pointer min-h-[40px]"

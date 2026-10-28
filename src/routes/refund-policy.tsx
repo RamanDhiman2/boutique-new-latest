@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PageHeader } from "@/components/site/Chrome";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
+import { getSiteSettings } from "@/lib/siteSettingsStore";
 
 export const Route = createFileRoute("/refund-policy")({
   head: () => ({
@@ -13,6 +14,7 @@ export const Route = createFileRoute("/refund-policy")({
 });
 
 function RefundPolicy() {
+  const { contactEmail } = getSiteSettings();
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-10 pt-4 pb-20 sm:pb-24">
       <SiteBreadcrumb items={[{ label: "Refund Policy" }]} />
@@ -43,10 +45,10 @@ function RefundPolicy() {
           </Link>{" "}
           or email us at{" "}
           <a
-            href="mailto:Charminngchic@gmail.com"
+            href={`mailto:${contactEmail}`}
             className="text-primary underline hover:text-primary/80 break-all"
           >
-            Charminngchic@gmail.com
+            {contactEmail}
           </a>
           .
         </p>

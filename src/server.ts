@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { buildSitemap } from "./server/sitemap";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -47,6 +48,19 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const url = new URL(request.url);
+      if (url.pathname === "/sitemap.xml" && (request.method === "GET" || request.method === "HEAD")) {
+        const runtimeEnv = (env as Record<string, string>) || process.env;
+        const xml = await buildSitemap(runtimeEnv);
+        return new Response(request.method === "HEAD" ? null : xml, {
+          status: 200,
+          headers: {
+            "content-type": "application/xml; charset=utf-8",
+            "cache-control": "public, max-age=3600",
+          },
+        });
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       const normalized = await normalizeCatastrophicSsrResponse(response);
@@ -65,7 +79,9 @@ export default {
           VITE_SITE_URL: runtimeEnv["VITE_SITE_URL"] || runtimeEnv["VITE_PUBLIC_URL"] || "",
         };
 
-        const envScript = `<script>window.__ENV__ = Object.assign(window.__ENV__ || {}, ${JSON.stringify(clientEnv)});</script>`;
+        // Escape the less-than sign so no env value can close this inline script
+        const envJson = JSON.stringify(clientEnv).replace(/</g, "\\u003c");
+        const envScript = `<script>window.__ENV__ = Object.assign(window.__ENV__ || {}, ${envJson});</script>`;
         const injected = text.replace("<head>", `<head>${envScript}`);
 
         return new Response(injected, {

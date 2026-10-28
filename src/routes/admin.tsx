@@ -9,6 +9,7 @@ import {
   ShieldAlert,
   ArrowLeft,
   Shirt,
+  Settings,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { fetchAdminOrders, useIsAdmin } from "@/lib/admin";
@@ -16,13 +17,14 @@ import { AdminDashboard } from "@/components/admin/AdminDashboard";
 import { AdminOrders } from "@/components/admin/AdminOrders";
 import { AdminReviews } from "@/components/admin/AdminReviews";
 import { AdminProducts } from "@/components/admin/AdminProducts";
+import { AdminSettings } from "@/components/admin/AdminSettings";
 
-type AdminTab = "dashboard" | "orders" | "products" | "reviews";
+type AdminTab = "dashboard" | "orders" | "products" | "reviews" | "settings";
 
 export const Route = createFileRoute("/admin")({
   validateSearch: (search: Record<string, unknown>): { tab?: AdminTab } => {
     const tab = search["tab"];
-    return tab === "orders" || tab === "products" || tab === "reviews" || tab === "dashboard"
+    return tab === "orders" || tab === "products" || tab === "reviews" || tab === "settings" || tab === "dashboard"
       ? { tab }
       : {};
   },
@@ -40,6 +42,7 @@ const TABS: { id: AdminTab; label: string; icon: typeof Package }[] = [
   { id: "orders", label: "Orders", icon: Package },
   { id: "products", label: "Products", icon: Shirt },
   { id: "reviews", label: "Reviews", icon: MessageSquare },
+  { id: "settings", label: "Settings", icon: Settings },
 ];
 
 function AdminPage() {
@@ -129,11 +132,11 @@ function AdminPage() {
         })}
       </nav>
 
-      {ordersQuery.isError && tab !== "reviews" && tab !== "products" ? (
+      {ordersQuery.isError && tab !== "reviews" && tab !== "products" && tab !== "settings" ? (
         <div className="p-6 border border-red-200 bg-red-50 rounded-md text-sm text-red-800">
           Could not load orders: {(ordersQuery.error as Error).message}
         </div>
-      ) : ordersQuery.isLoading && tab !== "reviews" && tab !== "products" ? (
+      ) : ordersQuery.isLoading && tab !== "reviews" && tab !== "products" && tab !== "settings" ? (
         <div className="py-20 flex justify-center text-muted-foreground">
           <Loader2 className="size-5 animate-spin" />
         </div>
@@ -146,6 +149,8 @@ function AdminPage() {
         <AdminOrders orders={orders} onChanged={() => ordersQuery.refetch()} />
       ) : tab === "products" ? (
         <AdminProducts />
+      ) : tab === "settings" ? (
+        <AdminSettings />
       ) : (
         <AdminReviews />
       )}

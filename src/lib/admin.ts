@@ -3,6 +3,8 @@ import { supabase, type OrderRecord, type ProductReviewRecord } from "./supabase
 import { useAuth } from "./auth";
 import { fetchProductsFromSupabase } from "./catalogService";
 import type { Product } from "./catalog";
+import type { SiteSettings } from "./siteSettingsStore";
+import type { PageSeo } from "./siteSettings";
 
 /**
  * Admin access is decided by the database (public.admin_users via is_admin()).
@@ -197,4 +199,53 @@ export async function uploadProductImage(productKey: string, file: File): Promis
   const { error } = await bucket.upload(path, file, { contentType: file.type, upsert: false });
   if (error) throw new Error(error.message || "Upload failed");
   return bucket.getPublicUrl(path).data.publicUrl;
+}
+
+// ---------------------------------------------------------------------------
+// Site settings & page SEO
+// ---------------------------------------------------------------------------
+
+export async function saveSiteSettings(settings: SiteSettings) {
+  const row = {
+    site_name: settings.siteName.trim(),
+    tagline: settings.tagline.trim(),
+    default_title: settings.defaultTitle.trim(),
+    default_description: settings.defaultDescription.trim(),
+    og_image_url: settings.ogImageUrl.trim(),
+    contact_email: settings.contactEmail.trim(),
+    whatsapp_number: settings.whatsappNumber.replace(/\D/g, ""),
+    instagram_url: settings.instagramUrl.trim(),
+    tiktok_url: settings.tiktokUrl.trim(),
+    announcement_text: settings.announcementText.trim(),
+    updated_at: new Date().toISOString(),
+  };
+  if (!row.site_name) throw new Error("Store name is required");
+  if (!/^\S+@\S+\.\S+$/.test(row.contact_email)) throw new Error("Please enter a valid contact email");
+  if (row.whatsapp_number.length < 8) throw new Error("Please enter the WhatsApp number with country code");
+
+  const res = await supabase.from("site_settings").update(row).eq("id", 1).select();
+  const updated = unwrap<unknown>(res);
+  const hasRow = Array.isArray(updated) ? updated.length > 0 : Boolean(updated);
+  if (!hasRow) {
+    unwrap(await supabase.from("site_settings").insert({ id: 1, ...row }).select().single());
+  }
+}
+
+export async function savePageSeo(entry: PageSeo) {
+  const row = {
+    title: entry.title.trim() || null,
+    description: entry.description.trim() || null,
+    noindex: entry.noindex,
+    updated_at: new Date().toISOString(),
+  };
+  const res = await supabase.from("page_seo").update(row).eq("path", entry.path).select();
+  const updated = unwrap<unknown>(res);
+  const hasRow = Array.isArray(updated) ? updated.length > 0 : Boolean(updated);
+  if (!hasRow) {
+    unwrap(await supabase.from("page_seo").insert({ path: entry.path, ...row }).select().single());
+  }
+}
+
+export async function deletePageSeo(path: string) {
+  unwrap(await supabase.from("page_seo").delete().eq("path", path));
 }

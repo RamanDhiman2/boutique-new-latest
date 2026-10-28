@@ -11,6 +11,7 @@ import { categories } from "@/lib/catalog";
 import { useCategoriesQuery } from "@/lib/catalogService";
 import { useCart } from "@/lib/cart";
 import { useAuth } from "@/lib/auth";
+import { useSiteSettings } from "@/lib/siteSettings";
 
 export function useReveal() {
   useEffect(() => {
@@ -28,6 +29,7 @@ export function useReveal() {
 }
 
 export function Header() {
+  const siteSettings = useSiteSettings();
   const { count, wishlist } = useCart();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -57,7 +59,7 @@ export function Header() {
   return (
     <>
       <div className="bg-primary text-primary-foreground text-center py-1.5 sm:py-2 px-3 eyebrow !text-[0.58rem] sm:!text-[0.62rem] truncate sm:whitespace-normal">
-        Custom Designs Available • Made to Measure Elegance
+        {siteSettings.announcementText}
       </div>
       <header className="sticky top-0 z-40 bg-background/95 backdrop-blur border-b">
         <div className="mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-10 h-16 sm:h-20 lg:h-24 flex items-center justify-between gap-2 sm:gap-4">
@@ -270,6 +272,7 @@ const Dot = ({ n }: { n: number }) => (
 );
 
 export function Footer() {
+  const siteSettings = useSiteSettings();
   return (
     <footer className="bg-ink text-ink-foreground mt-16 sm:mt-20 lg:mt-24">
       <div className="mx-auto max-w-[1500px] px-5 sm:px-6 lg:px-10 py-12 sm:py-16 lg:py-20 grid gap-8 sm:gap-10 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
@@ -303,7 +306,7 @@ export function Footer() {
         <Col title="Connect">
           <Link to="/about" className="hover:text-gold transition-colors py-0.5">Our Story</Link>
           <a
-            href="https://www.instagram.com/sohnimutiyaarofficial_?xtok=MWRxbTBram5uZG9udg=="
+            href={siteSettings.instagramUrl}
             target="_blank"
             rel="noreferrer"
             className="hover:text-gold transition-colors py-0.5"
@@ -311,7 +314,7 @@ export function Footer() {
             Instagram
           </a>
           <a
-            href="https://www.tiktok.com/@sohnimutiyaarofficial_?_r=1&_t=ZN-9ANTri79OHm"
+            href={siteSettings.tiktokUrl}
             target="_blank"
             rel="noreferrer"
             className="hover:text-gold transition-colors py-0.5"

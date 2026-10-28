@@ -5,6 +5,7 @@ import { useState, useMemo, useEffect } from "react";
 import { useAuth } from "@/lib/auth";
 import { Ruler, RotateCcw, BookOpen, ArrowRight, Scissors, Check, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { getSiteSettings } from "@/lib/siteSettingsStore";
 
 export type MetricKey =
   | "shirtLength"
@@ -1205,7 +1206,7 @@ function SaveSlipModal({
 
         <div className="space-y-3">
           <a
-            href={`mailto:Charminngchic@gmail.com?subject=${encodeURIComponent("Bespoke Punjabi Suit Measurement Slip")}&body=${encodeURIComponent(waMessage)}`}
+            href={`mailto:${getSiteSettings().contactEmail}?subject=${encodeURIComponent("Bespoke Punjabi Suit Measurement Slip")}&body=${encodeURIComponent(waMessage)}`}
             className="w-full py-2.5 bg-primary text-primary-foreground rounded-lg font-medium text-xs flex items-center justify-center gap-2 uppercase tracking-wider hover:bg-primary/90 transition-colors"
           >
             <Mail className="size-4" /> Email Measurement Slip

@@ -1,3 +1,4 @@
+import { getSiteSettings } from "./siteSettingsStore";
 import {
   product1Images,
   product2Images,
@@ -26,11 +27,9 @@ import {
 
 export const heroImage = featuredHeroImage;
 
-export const CONTACT_EMAIL = "Charminngchic@gmail.com";
-export const WHATSAPP_NUMBER = "447393070421";
-
+// Contact details are editable in Admin → Settings (see siteSettingsStore)
 export const waLink = (msg = "Hi SohniMutiyaar By CC, I'd like to enquire about an outfit.") =>
-  `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+  `https://wa.me/${getSiteSettings().whatsappNumber}?text=${encodeURIComponent(msg)}`;
 
 export type Category = {
   slug: string;

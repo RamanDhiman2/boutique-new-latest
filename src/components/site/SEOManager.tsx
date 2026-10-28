@@ -1,229 +1,249 @@
 import { useEffect } from "react";
 import { useRouterState } from "@tanstack/react-router";
-import { categories, products } from "@/lib/catalog";
+import { categories } from "@/lib/catalog";
+import { useAllProductsQuery } from "@/lib/catalogService";
+import { usePageSeo, useSiteSettings } from "@/lib/siteSettings";
 
-const SITE_URL = ((import.meta.env["VITE_SITE_URL"] as string | undefined) || "https://charminngchic.com").replace(/\/+$/, "");
+const SITE_URL = (
+  (import.meta.env["VITE_SITE_URL"] as string | undefined) || "https://charminngchic.com"
+).replace(/\/+$/, "");
 
-const DEFAULT_TITLE = "SohniMutiyaar By CC — Indian Fashion & Bespoke Tailoring";
-const DEFAULT_DESC =
-  "Luxury Indian bridal, occasion and daily wear with bespoke handwork, fine fabrics and made-to-measure tailoring.";
-
-// Static routes metadata lookup table
-const ROUTE_METADATA: Record<string, { title: string; description: string; noindex?: boolean }> = {
-  "/": {
-    title: "SohniMutiyaar By CC — Tradition, Tailored Your Way",
-    description:
-      "Luxury Indian bridal, occasion, and daily wear with bespoke handwork, exquisite embroideries, and made-to-measure tailoring.",
-  },
+// Built-in titles/descriptions; Admin → Settings → Page SEO can override any of these
+const ROUTE_METADATA: Record<string, { title: string; description: string }> = {
   "/shop": {
-    title: "Shop All Collections — SohniMutiyaar By CC",
+    title: "Shop All Collections",
     description:
-      "Shop our complete catalog of Punjabi suits, bridal lehengas, organza suits, and handcrafted festive wear.",
+      "Shop our complete catalogue of Punjabi suits, bridal outfits, organza suits and handcrafted festive wear.",
   },
   "/collections": {
-    title: "Our Collections — SohniMutiyaar By CC",
+    title: "Our Collections",
     description:
-      "Explore curated designer collections: Bridal, Festive Occasions, Aari Work, Mirror Work, Thread Work, and Hand Work.",
+      "Explore curated collections: Bridal, Festive Occasions, Aari Work, Mirror Work, Thread Work and Hand Work.",
   },
   "/custom-designs": {
-    title: "Custom Designs & Bespoke Tailoring — SohniMutiyaar By CC",
+    title: "Custom Designs & Bespoke Tailoring",
     description:
-      "Personalised, made-to-measure Indian outfits. Choose your design, fabrics, colours, and embroidery.",
+      "Personalised, made-to-measure Indian outfits. Choose your design, fabrics, colours and embroidery.",
   },
   "/measurements": {
-    title: "Size & Measurement Guide — SohniMutiyaar By CC",
+    title: "Size & Measurement Guide",
     description:
-      "Submit your bespoke measurements for custom tailored Punjabi suits, kurtas, and bridal outfits.",
+      "Submit your bespoke measurements for custom tailored Punjabi suits, kurtas and bridal outfits.",
   },
   "/about": {
-    title: "Our Heritage & Story — SohniMutiyaar By CC",
+    title: "Our Heritage & Story",
     description:
-      "Discover the story behind SohniMutiyaar By CC, where timeless Indian tradition meets modern elegance.",
+      "The story behind SohniMutiyaar By CC, where timeless Indian tradition meets modern elegance.",
   },
   "/contact": {
-    title: "Contact Us & Enquiries — SohniMutiyaar By CC",
+    title: "Contact Us & Enquiries",
     description:
-      "Connect with our design team via WhatsApp, email, or direct enquiry for bridal consultations and orders.",
+      "Reach our design team by WhatsApp, email or enquiry form for bridal consultations and orders.",
   },
   "/shipping": {
-    title: "Worldwide Shipping & Delivery — SohniMutiyaar By CC",
-    description:
-      "Fast worldwide shipping, bespoke order fulfillment times, and tracking information.",
+    title: "Worldwide Shipping & Delivery",
+    description: "Worldwide shipping, bespoke order timelines and tracking information.",
   },
   "/refund-policy": {
-    title: "Refund & Returns Policy — SohniMutiyaar By CC",
-    description:
-      "Our cancellation, exchange, and return policies for made-to-measure and ready-to-wear clothing.",
+    title: "Refund & Returns Policy",
+    description: "Cancellation, exchange and return policies for made-to-measure clothing.",
   },
   "/privacy-policy": {
-    title: "Privacy Policy — SohniMutiyaar By CC",
+    title: "Privacy Policy",
     description:
-      "How SohniMutiyaar By CC protects your personal privacy and securely manages your customer information.",
+      "How SohniMutiyaar By CC protects your privacy and handles your personal information.",
   },
   "/terms-of-service": {
-    title: "Terms of Service — SohniMutiyaar By CC",
-    description:
-      "Terms and conditions for browsing, purchasing, and custom orders with SohniMutiyaar By CC.",
-  },
-  // Private / user-only pages marked noindex
-  "/checkout": {
-    title: "Secure Checkout — SohniMutiyaar By CC",
-    description: "Complete your order securely.",
-    noindex: true,
-  },
-  "/bag": {
-    title: "Your Shopping Bag — SohniMutiyaar By CC",
-    description: "Review your selected outfits and bespoke pieces.",
-    noindex: true,
-  },
-  "/profile": {
-    title: "My Account — SohniMutiyaar By CC",
-    description: "Manage your orders, addresses, and saved measurements.",
-    noindex: true,
-  },
-  "/login": {
-    title: "Sign In — SohniMutiyaar By CC",
-    description: "Sign in to your account.",
-    noindex: true,
-  },
-  "/register": {
-    title: "Create Account — SohniMutiyaar By CC",
-    description: "Join the SohniMutiyaar Circle.",
-    noindex: true,
+    title: "Terms of Service",
+    description: "Terms and conditions for browsing, purchasing and custom orders.",
   },
 };
 
+// Private or personal pages are never indexed
+const NOINDEX_PREFIXES = [
+  "/checkout",
+  "/bag",
+  "/profile",
+  "/login",
+  "/register",
+  "/auth",
+  "/order-success",
+  "/admin",
+];
+
+const absolute = (url: string) =>
+  /^https?:\/\//.test(url) ? url : `${SITE_URL}${url.startsWith("/") ? "" : "/"}${url}`;
+
+function setMeta(attribute: "name" | "property", key: string, content: string) {
+  let el = document.head.querySelector(`meta[${attribute}="${key}"]`) as HTMLMetaElement | null;
+  if (!el) {
+    el = document.createElement("meta");
+    el.setAttribute(attribute, key);
+    document.head.appendChild(el);
+  }
+  el.setAttribute("content", content);
+}
+
+function setCanonical(href: string) {
+  let el = document.head.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
+  if (!el) {
+    el = document.createElement("link");
+    el.setAttribute("rel", "canonical");
+    document.head.appendChild(el);
+  }
+  el.setAttribute("href", href);
+}
+
+function setJsonLd(id: string, data: unknown | null) {
+  let el = document.head.querySelector(`script[data-seo="${id}"]`) as HTMLScriptElement | null;
+  if (!data) {
+    el?.remove();
+    return;
+  }
+  if (!el) {
+    el = document.createElement("script");
+    el.type = "application/ld+json";
+    el.setAttribute("data-seo", id);
+    document.head.appendChild(el);
+  }
+  el.textContent = JSON.stringify(data);
+}
+
 /**
- * Lightweight, non-invasive SEO Manager
- * Dynamically synchronizes Canonical URL, Document Title, Meta Description,
- * OpenGraph tags, and Schema.org JSON-LD without modifying individual page components.
+ * Keeps title, description, canonical URL, robots, Open Graph / Twitter tags and
+ * JSON-LD (organisation + product) in sync with the current page, the site
+ * settings and any per-page SEO overrides from the admin panel.
  */
 export function SEOManager() {
-  const pathname = useRouterState({
-    select: (state) => state.location.pathname,
-  });
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const settings = useSiteSettings();
+  const pageSeo = usePageSeo();
+  const { data: products = [] } = useAllProductsQuery();
 
   useEffect(() => {
-    if (typeof window === "undefined" || !document) return;
+    if (typeof document === "undefined") return;
+    // Applied now and once more after route head tags settle (loaders can finish later)
+    apply();
+    const timer = window.setTimeout(apply, 800);
+    return () => window.clearTimeout(timer);
 
-    // 1. Determine canonical URL
-    const cleanPath = pathname === "/" ? "" : pathname.replace(/\/+$/, "");
-    const canonicalUrl = `${SITE_URL}${cleanPath}`;
+    function apply() {
+      const cleanPath = pathname === "/" ? "/" : pathname.replace(/\/+$/, "");
+      const canonicalUrl = `${SITE_URL}${cleanPath === "/" ? "" : cleanPath}`;
+      const suffix = ` — ${settings.siteName}`;
 
-    // 2. Resolve title, description, and indexing rules
-    let meta = ROUTE_METADATA[cleanPath || "/"];
-    let imageUrl = `${SITE_URL}/Maroon%20and%20Gold%20Monogram%20Fashion%20Logo.png`;
+      // null = keep the title the page's own route set (e.g. "Your Bag — ...")
+      let title: string | null =
+        cleanPath === "/" ? `${settings.siteName} — ${settings.tagline}` : null;
+      let description = settings.defaultDescription;
+      let image = settings.ogImageUrl;
+      let ogType = "website";
+      let productLd: Record<string, unknown> | null = null;
 
-    // Dynamic resolution for collections
-    if (!meta && cleanPath.startsWith("/collections/")) {
-      const slug = cleanPath.replace("/collections/", "");
-      const category = categories.find((c) => c.slug === slug);
-      if (category) {
-        meta = {
-          title: `${category.name} Collection — SohniMutiyaar By CC`,
-          description: `${category.description} Explore handcrafted ${category.name.toLowerCase()} outfits designed for elegance.`,
-        };
-        if (category.image) imageUrl = category.image.startsWith("http") ? category.image : `${SITE_URL}${category.image}`;
+      const builtIn = ROUTE_METADATA[cleanPath];
+      if (builtIn) {
+        title = builtIn.title + suffix;
+        description = builtIn.description;
       }
-    }
 
-    // Dynamic resolution for product pages
-    if (!meta && cleanPath.startsWith("/product/")) {
-      const id = cleanPath.replace("/product/", "");
-      const product = products.find((p) => p.id === id);
-      if (product) {
-        meta = {
-          title: `${product.name} — SohniMutiyaar By CC`,
-          description: product.description.slice(0, 160).replace(/\n/g, " "),
-        };
-        if (product.images?.[0]) {
-          imageUrl = product.images[0].startsWith("http") ? product.images[0] : `${SITE_URL}${product.images[0]}`;
+      if (cleanPath.startsWith("/collections/")) {
+        const category = categories.find((c) => c.slug === cleanPath.slice("/collections/".length));
+        if (category) {
+          title = `${category.name} Collection${suffix}`;
+          description = category.description;
+          if (category.image) image = category.image;
         }
       }
-    }
 
-    const title = meta?.title || DEFAULT_TITLE;
-    const description = meta?.description || DEFAULT_DESC;
-    const isNoIndex = meta?.noindex || false;
-
-    // Update Document Title
-    document.title = title;
-
-    // Helper to safely set or create a <meta> tag
-    const setMetaTag = (attribute: "name" | "property", attrValue: string, contentValue: string) => {
-      let element = document.head.querySelector(`meta[${attribute}="${attrValue}"]`) as HTMLMetaElement | null;
-      if (!element) {
-        element = document.createElement("meta");
-        element.setAttribute(attribute, attrValue);
-        document.head.appendChild(element);
+      if (cleanPath.startsWith("/product/")) {
+        const product = products.find((p) => p.id === cleanPath.slice("/product/".length));
+        if (product) {
+          title = product.name + suffix;
+          description =
+            product.description.replace(/\s+/g, " ").trim().slice(0, 160) || description;
+          if (product.images[0]) image = product.images[0];
+          ogType = "product";
+          productLd = {
+            "@context": "https://schema.org",
+            "@type": "Product",
+            name: product.name,
+            image: product.images.slice(0, 6).map(absolute),
+            description: product.description.replace(/\s+/g, " ").trim().slice(0, 500),
+            sku: product.id,
+            color: product.colour || undefined,
+            brand: { "@type": "Brand", name: settings.siteName },
+            offers: {
+              "@type": "Offer",
+              url: canonicalUrl,
+              priceCurrency: "GBP",
+              price: product.price.toFixed(2),
+              availability:
+                product.soldOut || product.isUpcoming
+                  ? "https://schema.org/OutOfStock"
+                  : "https://schema.org/InStock",
+              itemCondition: "https://schema.org/NewCondition",
+            },
+          };
+        }
       }
-      element.setAttribute("content", contentValue);
-    };
 
-    // Helper to safely set or create a <link> tag
-    const setLinkTag = (rel: string, hrefValue: string) => {
-      let element = document.head.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement | null;
-      if (!element) {
-        element = document.createElement("link");
-        element.setAttribute("rel", rel);
-        document.head.appendChild(element);
-      }
-      element.setAttribute("href", hrefValue);
-    };
+      // Admin overrides win over everything above
+      const override = pageSeo.find((p) => p.path === cleanPath);
+      if (override?.title) title = override.title;
+      if (override?.description) description = override.description;
 
-    // 3. Inject Canonical Link
-    setLinkTag("canonical", canonicalUrl);
+      const noindex =
+        override?.noindex === true ||
+        NOINDEX_PREFIXES.some((p) => cleanPath === p || cleanPath.startsWith(`${p}/`));
+      const imageUrl = absolute(image);
 
-    // 4. Inject Search Engine Meta Tags
-    setMetaTag("name", "description", description);
-    setMetaTag("name", "robots", isNoIndex ? "noindex, nofollow" : "index, follow, max-image-preview:large");
+      if (title) document.title = title;
+      else if (!document.title) document.title = settings.defaultTitle;
+      const shareTitle = title ?? document.title;
+      setCanonical(canonicalUrl);
+      setMeta("name", "description", description);
+      setMeta(
+        "name",
+        "robots",
+        noindex ? "noindex, nofollow" : "index, follow, max-image-preview:large",
+      );
+      setMeta("property", "og:site_name", settings.siteName);
+      setMeta("property", "og:type", ogType);
+      setMeta("property", "og:title", shareTitle);
+      setMeta("property", "og:description", description);
+      setMeta("property", "og:url", canonicalUrl);
+      setMeta("property", "og:image", imageUrl);
+      setMeta("name", "twitter:card", "summary_large_image");
+      setMeta("name", "twitter:title", shareTitle);
+      setMeta("name", "twitter:description", description);
+      setMeta("name", "twitter:image", imageUrl);
 
-    // 5. Inject Open Graph (Facebook, WhatsApp, LinkedIn)
-    setMetaTag("property", "og:type", cleanPath.startsWith("/product/") ? "product" : "website");
-    setMetaTag("property", "og:title", title);
-    setMetaTag("property", "og:description", description);
-    setMetaTag("property", "og:url", canonicalUrl);
-    setMetaTag("property", "og:image", imageUrl);
-
-    // 6. Inject Twitter Card
-    setMetaTag("name", "twitter:card", "summary_large_image");
-    setMetaTag("name", "twitter:title", title);
-    setMetaTag("name", "twitter:description", description);
-    setMetaTag("name", "twitter:image", imageUrl);
-
-    // 7. Inject Organization / WebSite JSON-LD Schema
-    let schemaScript = document.head.querySelector(`script[data-seo="jsonld-org"]`) as HTMLScriptElement | null;
-    if (!schemaScript) {
-      schemaScript = document.createElement("script");
-      schemaScript.setAttribute("type", "application/ld+json");
-      schemaScript.setAttribute("data-seo", "jsonld-org");
-      document.head.appendChild(schemaScript);
+      setJsonLd("jsonld-org", {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "Organization",
+            "@id": `${SITE_URL}/#organization`,
+            name: settings.siteName,
+            url: SITE_URL,
+            logo: absolute(DEFAULT_LOGO),
+            email: settings.contactEmail,
+            sameAs: [settings.instagramUrl, settings.tiktokUrl].filter(Boolean),
+          },
+          {
+            "@type": "WebSite",
+            "@id": `${SITE_URL}/#website`,
+            url: SITE_URL,
+            name: settings.siteName,
+            publisher: { "@id": `${SITE_URL}/#organization` },
+          },
+        ],
+      });
+      setJsonLd("jsonld-product", productLd);
     }
-    const schemaData = {
-      "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": "Organization",
-          "@id": `${SITE_URL}/#organization`,
-          name: "SohniMutiyaar By CC",
-          url: SITE_URL,
-          logo: `${SITE_URL}/Maroon%20and%20Gold%20Monogram%20Fashion%20Logo.png`,
-          sameAs: [
-            "https://www.instagram.com/sohnimutiyaarofficial_",
-            "https://www.tiktok.com/@sohnimutiyaarofficial_",
-          ],
-        },
-        {
-          "@type": "WebSite",
-          "@id": `${SITE_URL}/#website`,
-          url: SITE_URL,
-          name: "SohniMutiyaar By CC",
-          publisher: { "@id": `${SITE_URL}/#organization` },
-        },
-      ],
-    };
-    schemaScript.textContent = JSON.stringify(schemaData);
-  }, [pathname]);
+  }, [pathname, settings, pageSeo, products]);
 
   return null;
 }
+
+const DEFAULT_LOGO = "/Maroon%20and%20Gold%20Monogram%20Fashion%20Logo.png";

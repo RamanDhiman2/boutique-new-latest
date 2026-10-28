@@ -1,6 +1,6 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useState, useMemo } from "react";
-import { categories, productsIn } from "@/lib/catalog";
+import { categories, productsIn, waLink } from "@/lib/catalog";
 import { useCategoryProductsQuery } from "@/lib/catalogService";
 import { ProductCard } from "@/components/site/ProductCard";
 import { useReveal } from "@/components/site/Chrome";
@@ -132,7 +132,7 @@ function CollectionPage() {
               <span className="text-muted-foreground">These pieces are out of stock in ready-to-wear sizes, but our artisans can recreate them made-to-measure.</span>
             </div>
             <a
-              href="https://wa.me/447393070421?text=Hi%20SohniMutiyaar%20By%20CC%2C%20I'd%20like%20to%20request%20a%20custom%20recreation%20of%20a%20sold-out%20design."
+              href={waLink("Hi SohniMutiyaar By CC, I'd like to request a custom recreation of a sold-out design.")}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 text-primary hover:underline font-semibold uppercase tracking-wider text-[11px] shrink-0"

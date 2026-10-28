@@ -17,6 +17,8 @@ import { CartProvider } from "@/lib/cart";
 import { AuthProvider } from "@/lib/auth";
 import { Header, Footer } from "@/components/site/Chrome";
 import { WhatsAppFloatingButton } from "@/components/site/WhatsAppButton";
+import { SEOManager } from "@/components/site/SEOManager";
+import { siteSettingsQueryOptions } from "@/lib/siteSettings";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -69,6 +71,8 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   ssr: false,
+  // Site settings (contact details, SEO defaults) are needed by every page
+  loader: ({ context }) => context.queryClient.ensureQueryData(siteSettingsQueryOptions),
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -137,6 +141,7 @@ function RootComponent() {
           </main>
           <Footer />
           {!isAdminPage && <WhatsAppFloatingButton />}
+          <SEOManager />
           <Toaster position="bottom-left" />
         </CartProvider>
       </AuthProvider>
