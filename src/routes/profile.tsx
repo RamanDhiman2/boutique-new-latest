@@ -5,12 +5,23 @@ import { supabase, type AddressRecord, type OrderRecord } from "@/lib/supabase";
 import { toast } from "sonner";
 import { useState, useEffect, useRef } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { SiteBreadcrumb } from "@/components/site/SiteBreadcrumb";
-import { Download, Package, CheckCircle, Truck, XCircle, Edit2, Trash2, Plus, Loader2, Star, Home, Briefcase, MapPin } from "lucide-react";
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import { gbp } from "@/lib/catalog";
+import {
+  Package,
+  Edit2,
+  Trash2,
+  Plus,
+  Loader2,
+  Star,
+  Home,
+  Briefcase,
+  MapPin,
+  LayoutDashboard,
+  Ruler,
+  LogOut,
+  ChevronRight,
+} from "lucide-react";
 import { AddressForm, type AddressFormData } from "@/components/address/AddressForm";
 import { OrderHistoryView } from "@/components/orders/OrderHistoryView";
 
@@ -25,7 +36,6 @@ function ProfilePage() {
   const queryClient = useQueryClient();
 
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [trackingOrderId, setTrackingOrderId] = useState<string | null>(null);
   const [editingAddress, setEditingAddress] = useState<AddressRecord | null>(null);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [addressSubmitting, setAddressSubmitting] = useState(false);
@@ -116,40 +126,6 @@ function ProfilePage() {
     navigate({ to: "/" });
   };
 
-  const handleCancelOrder = async (orderId: string) => {
-    if (!confirm("Are you sure you want to cancel this order?")) return;
-    const { error } = await supabase.rpc("cancel_order_secure", { order_id: orderId });
-    if (error && typeof error === "object" && "message" in error) {
-      toast.error(String((error as { message: string }).message));
-    } else {
-      toast.success("Order cancelled securely");
-      refetchOrders();
-    }
-  };
-
-  const handleExportPdf = (order: OrderRecord) => {
-    const doc = new jsPDF();
-    doc.text(`Order Invoice #${order.id.slice(0, 8)}`, 14, 18);
-    doc.text(`Date: ${new Date(order.created_at).toLocaleDateString()}`, 14, 26);
-    doc.text(`Payment: ${(order.payment_status || "unpaid").toUpperCase()}`, 14, 34);
-    doc.text(`Fulfillment: ${order.status.toUpperCase()}`, 14, 42);
-    
-    autoTable(doc, {
-      startY: 50,
-      head: [["Item", "Size", "Quantity", "Price", "Total"]],
-      body: order.order_items.map((it) => [
-        it.product_id,
-        it.size,
-        it.quantity,
-        `£${it.price}`,
-        `£${it.price * it.quantity}`,
-      ]),
-      foot: [["", "", "", "Total", `£${order.total_amount}`]],
-    });
-
-    doc.save(`Order_${order.id.slice(0, 8)}.pdf`);
-  };
-
   const startEditAddress = (address: AddressRecord) => {
     setIsAddingAddress(false);
     setEditingAddress(address);
@@ -193,10 +169,7 @@ function ProfilePage() {
       }
 
       // 2. Direct hard delete attempt
-      const { error: delError } = await supabase
-        .from("addresses")
-        .delete()
-        .eq("id", addressId);
+      const { error: delError } = await supabase.from("addresses").delete().eq("id", addressId);
 
       if (delError) {
         const errObj = delError as { message?: string; code?: string };
@@ -222,7 +195,7 @@ function ProfilePage() {
           // Persist removal to local client cache so it disappears immediately
           try {
             const currentDeleted: string[] = JSON.parse(
-              localStorage.getItem(`deleted_addrs_${user.id}`) || "[]"
+              localStorage.getItem(`deleted_addrs_${user.id}`) || "[]",
             );
             if (!currentDeleted.includes(addressId)) {
               currentDeleted.push(addressId);
@@ -264,13 +237,12 @@ function ProfilePage() {
     if (!user) return;
     try {
       // 1. Try safe RPC if migration exists
-      const { error: rpcError } = await supabase.rpc("set_default_address", { p_address_id: addressId });
+      const { error: rpcError } = await supabase.rpc("set_default_address", {
+        p_address_id: addressId,
+      });
       if (rpcError) {
         // Fallback: update is_default directly in table if column exists
-        await supabase
-          .from("addresses")
-          .update({ is_default: false })
-          .eq("user_id", user.id);
+        await supabase.from("addresses").update({ is_default: false }).eq("user_id", user.id);
 
         const { error: updateErr } = await supabase
           .from("addresses")
@@ -336,7 +308,11 @@ function ProfilePage() {
         // Fallback to base payload if remote schema doesn't have apartment or is_default yet
         if (updateRes.error) {
           const errMsg = updateRes.error.message || "";
-          if (errMsg.includes("column") || errMsg.includes("schema cache") || (updateRes.error as any).code === "PGRST204") {
+          if (
+            errMsg.includes("column") ||
+            errMsg.includes("schema cache") ||
+            (updateRes.error as any).code === "PGRST204"
+          ) {
             const updateBase = { ...basePayload };
             delete updateBase["user_id"]; // don't re-assign user_id on update
             updateRes = await supabase
@@ -358,21 +334,17 @@ function ProfilePage() {
         setEditingAddress(null);
         setIsAddingAddress(false);
       } else {
-        let insertRes = await supabase
-          .from("addresses")
-          .insert(extendedPayload)
-          .select()
-          .single();
+        let insertRes = await supabase.from("addresses").insert(extendedPayload).select().single();
 
         // Fallback to base payload if remote schema doesn't have new columns yet
         if (insertRes.error) {
           const errMsg = insertRes.error.message || "";
-          if (errMsg.includes("column") || errMsg.includes("schema cache") || (insertRes.error as any).code === "PGRST204") {
-            insertRes = await supabase
-              .from("addresses")
-              .insert(basePayload)
-              .select()
-              .single();
+          if (
+            errMsg.includes("column") ||
+            errMsg.includes("schema cache") ||
+            (insertRes.error as any).code === "PGRST204"
+          ) {
+            insertRes = await supabase.from("addresses").insert(basePayload).select().single();
           }
         }
 
@@ -412,244 +384,314 @@ function ProfilePage() {
     }
   };
 
-  const renderTimeline = (status: string) => {
-    const s = status.toLowerCase();
-    const isCancelled = s === "cancelled";
-    
-    const steps = [
-      { id: "processing", label: "Processing", icon: Package },
-      { id: "shipped", label: "Shipped", icon: Truck },
-      { id: "delivered", label: "Delivered", icon: CheckCircle },
-    ];
+  const displayName = String(user.user_metadata?.["full_name"] || "").trim();
+  const initials =
+    (displayName || user.email || "?")
+      .split(/[\s@.]+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "?";
 
-    if (isCancelled) {
-      return (
-        <div className="flex items-center gap-4 text-destructive p-4 border border-destructive/20 rounded-md bg-destructive/5 mt-6">
-          <XCircle className="size-6" />
-          <div>
-            <div className="font-semibold uppercase tracking-wider text-sm">Order Cancelled</div>
-            <div className="text-sm opacity-80 mt-1">This order has been cancelled and will not be fulfilled.</div>
-          </div>
-        </div>
-      );
-    }
+  // Same rule as the order list: abandoned (never paid) checkouts are not real orders
+  const placedOrders = (orders || []).filter((o) =>
+    ["captured", "refunded"].includes((o.payment_status || "").toLowerCase()),
+  );
+  const latestOrder = placedOrders[0];
+  const defaultAddressId = localStorage.getItem(`default_addr_${user.id}`);
 
-    let currentStepIdx = 0;
-    if (s === "shipped") currentStepIdx = 1;
-    if (s === "delivered") currentStepIdx = 2;
-
-    return (
-      <div className="mt-4 mb-2 relative">
-        <div className="absolute top-5 left-0 w-full h-0.5 bg-border -z-10 hidden sm:block"></div>
-        <div className="flex flex-col sm:flex-row justify-between gap-6 sm:gap-0">
-          {steps.map((step, idx) => {
-            const isCompleted = idx <= currentStepIdx;
-            const isCurrent = idx === currentStepIdx;
-            const Icon = step.icon;
-            return (
-              <div key={step.id} className="flex sm:flex-col items-center gap-4 sm:gap-3 text-center bg-card">
-                <div 
-                  className={`size-10 rounded-full flex items-center justify-center border-2 shrink-0 ${
-                    isCompleted ? "border-primary bg-primary text-primary-foreground" : "border-border bg-muted text-muted-foreground"
-                  }`}
-                >
-                  <Icon className="size-5" />
-                </div>
-                <div>
-                  <div className={`font-medium text-sm ${isCompleted ? "text-foreground" : "text-muted-foreground"}`}>
-                    {step.label}
-                  </div>
-                  {isCurrent && <div className="text-xs text-primary mt-1">Current Status</div>}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
-  };
+  const navItems = [
+    { id: "dashboard", label: "Overview", icon: LayoutDashboard },
+    { id: "orders", label: "My Orders", icon: Package },
+    { id: "addresses", label: "Addresses", icon: MapPin },
+  ];
 
   return (
-    <div className="mx-auto max-w-[1500px] px-4 sm:px-6 lg:px-10 pt-4 pb-20">
+    <div className="mx-auto max-w-[1200px] px-4 sm:px-6 lg:px-10 pt-4 pb-20">
       <SiteBreadcrumb items={[{ label: "My Account" }]} />
-      <h1 className="text-3xl sm:text-4xl mt-4 sm:mt-6 mb-2">My Account</h1>
-      <p className="text-xs sm:text-sm text-muted-foreground mb-6 sm:mb-10">
-        Welcome back, {user.user_metadata?.["full_name"] || user.email}
-      </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 lg:gap-10">
-        <div className="flex md:flex-col overflow-x-auto gap-2 no-scrollbar pb-2 md:pb-0">
-          <button
-            onClick={() => setActiveTab("dashboard")}
-            className={`whitespace-nowrap px-4 py-3 text-xs sm:text-sm rounded-sm text-left ${activeTab === "dashboard" ? "bg-muted font-medium" : "hover:bg-muted transition-colors"}`}
-          >
-            Dashboard
-          </button>
-          <button
-            onClick={() => setActiveTab("orders")}
-            className={`whitespace-nowrap px-4 py-3 text-xs sm:text-sm rounded-sm text-left ${activeTab === "orders" ? "bg-muted font-medium" : "hover:bg-muted transition-colors"}`}
-          >
-            Order History
-          </button>
-          <button
-            onClick={() => setActiveTab("addresses")}
-            className={`whitespace-nowrap px-4 py-3 text-xs sm:text-sm rounded-sm text-left ${activeTab === "addresses" ? "bg-muted font-medium" : "hover:bg-muted transition-colors"}`}
-          >
-            Addresses
-          </button>
-          <button
-            onClick={handleLogout}
-            className="whitespace-nowrap px-4 py-3 text-xs sm:text-sm rounded-sm text-left hover:bg-muted transition-colors text-destructive"
-          >
-            Logout
-          </button>
-        </div>
-        <div className="md:col-span-3 border p-4 sm:p-6 md:p-10 rounded-sm bg-card">
-          {activeTab === "dashboard" && (
-            <>
-              <h2 className="text-2xl mb-6">Dashboard</h2>
-              <p className="text-muted-foreground mb-8">
-                From your account dashboard you can view your recent orders, manage your shipping
-                and billing addresses, and edit your password and account details.
-              </p>
+      <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6 lg:gap-12 mt-6 sm:mt-8">
+        {/* Sidebar */}
+        <aside className="lg:sticky lg:top-28 self-start space-y-4">
+          <div className="flex items-center gap-4">
+            <div className="size-14 shrink-0 rounded-full bg-[#6B2C3A] text-white flex items-center justify-center font-serif text-xl">
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs text-muted-foreground">Welcome back</p>
+              <h1 className="font-serif text-2xl leading-tight truncate">
+                {displayName || "My Account"}
+              </h1>
+              <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+            </div>
+          </div>
 
-              <h3 className="text-xl mb-4">Edit Profile</h3>
-              <form onSubmit={handleUpdateProfile} className="max-w-md space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Full Name</label>
-                  <input
-                    name="name"
-                    defaultValue={String(user.user_metadata?.["full_name"] || "")}
-                    className="w-full border p-2 rounded-sm"
-                    placeholder="Your Name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Email</label>
-                  <input
-                    value={user.email}
-                    disabled
-                    className="w-full border p-2 rounded-sm bg-muted text-muted-foreground cursor-not-allowed"
-                  />
-                </div>
-                <button type="submit" className="btn-primary">
-                  Save Changes
+          <nav
+            aria-label="Account sections"
+            className="flex lg:flex-col gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden border-b lg:border-b-0 lg:border-t border-black/10 lg:pt-4 -mx-4 px-4 lg:mx-0 lg:px-0"
+          >
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`flex items-center gap-2.5 whitespace-nowrap text-sm transition-colors px-1 lg:px-3 py-3 lg:py-2.5 lg:rounded-sm border-b-2 lg:border-b-0 ${
+                    isActive
+                      ? "border-[#6B2C3A] text-[#6B2C3A] font-medium lg:bg-[#6B2C3A]/[0.06]"
+                      : "border-transparent text-muted-foreground hover:text-foreground lg:hover:bg-black/[0.03]"
+                  }`}
+                >
+                  <Icon className="size-4 hidden sm:block" />
+                  {item.label}
                 </button>
-              </form>
+              );
+            })}
+            <button
+              onClick={() => navigate({ to: "/measurements" })}
+              className="flex items-center gap-2.5 whitespace-nowrap text-sm px-1 lg:px-3 py-3 lg:py-2.5 lg:rounded-sm border-b-2 lg:border-b-0 border-transparent text-muted-foreground hover:text-foreground lg:hover:bg-black/[0.03]"
+            >
+              <Ruler className="size-4 hidden sm:block" />
+              Measurements
+            </button>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2.5 whitespace-nowrap text-sm px-1 lg:px-3 py-3 lg:py-2.5 lg:rounded-sm border-b-2 lg:border-b-0 border-transparent text-destructive/80 hover:text-destructive lg:mt-2"
+            >
+              <LogOut className="size-4 hidden sm:block" />
+              Sign out
+            </button>
+          </nav>
+        </aside>
 
-              {/* Saved Bespoke Measurements / Tailor Slip */}
-              <div className="mt-10 border-t pt-8">
-                <h3 className="text-xl mb-4">Saved Measurements & Tailor Slip</h3>
-                {savedTailorSlip ? (
-                  <div className="border p-6 rounded-lg bg-card space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="font-medium">
-                        Tailor Reference #{savedTailorSlip.refId || "N/A"}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {savedTailorSlip.savedAt
-                          ? new Date(savedTailorSlip.savedAt).toLocaleDateString()
-                          : ""}
-                      </span>
-                    </div>
-                    <div className="text-sm text-muted-foreground flex flex-wrap gap-6">
-                      <div>
-                        Fit:{" "}
-                        <span className="font-medium text-foreground capitalize">
-                          {savedTailorSlip.fitPreference || "Regular"}
-                        </span>
-                      </div>
-                      <div>
-                        Unit:{" "}
-                        <span className="font-medium text-foreground capitalize">
-                          {savedTailorSlip.unit || "inches"}
-                        </span>
-                      </div>
-                      {savedTailorSlip.customerName && (
-                        <div>
-                          Customer:{" "}
-                          <span className="font-medium text-foreground">
-                            {savedTailorSlip.customerName}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="pt-2">
-                      <button
-                        onClick={() => navigate({ to: "/measurements" })}
-                        className="btn-outline !py-1.5 !px-3 !text-xs"
-                      >
-                        Review / Update Measurements
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="border border-dashed p-6 rounded-lg text-center space-y-3">
-                    <p className="text-sm text-muted-foreground">
-                      No bespoke measurement slip saved yet.
-                    </p>
+        {/* Content */}
+        <main className="min-w-0">
+          {activeTab === "dashboard" && (
+            <div className="space-y-8">
+              <div>
+                <h2 className="font-serif text-3xl">Overview</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Your orders, addresses and measurements in one place.
+                </p>
+              </div>
+
+              {/* Quick stats */}
+              <div className="grid grid-cols-3 gap-2 sm:gap-4">
+                {[
+                  {
+                    label: "Orders",
+                    value: String(placedOrders.length),
+                    icon: Package,
+                    onClick: () => setActiveTab("orders"),
+                  },
+                  {
+                    label: "Addresses",
+                    value: String(addresses?.length ?? 0),
+                    icon: MapPin,
+                    onClick: () => setActiveTab("addresses"),
+                  },
+                  {
+                    label: "Measurements",
+                    value: savedTailorSlip ? "Saved" : "Not yet",
+                    icon: Ruler,
+                    onClick: () => navigate({ to: "/measurements" }),
+                  },
+                ].map((stat) => {
+                  const Icon = stat.icon;
+                  return (
                     <button
-                      onClick={() => navigate({ to: "/measurements" })}
-                      className="btn-primary !py-2 !px-4 !text-xs"
+                      key={stat.label}
+                      onClick={stat.onClick}
+                      className="group text-left bg-white border border-black/10 rounded-md p-3 sm:p-5 hover:border-[#6B2C3A]/40 transition-colors flex items-center justify-between gap-2 min-w-0"
                     >
-                      Create Custom Measurement Slip
+                      <div>
+                        <p className="text-[11px] sm:text-xs text-muted-foreground flex items-center gap-1.5 truncate">
+                          <Icon className="size-3.5 hidden sm:block shrink-0" />
+                          {stat.label}
+                        </p>
+                        <p className="text-lg sm:text-2xl font-medium mt-1 tabular-nums truncate">
+                          {stat.value}
+                        </p>
+                      </div>
+                      <ChevronRight className="size-4 shrink-0 text-muted-foreground group-hover:text-[#6B2C3A] transition-colors hidden sm:block" />
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Latest order */}
+              {latestOrder && (
+                <section className="bg-white border border-black/10 rounded-md p-5 sm:p-6">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <h3 className="font-serif text-xl">Latest order</h3>
+                    <button
+                      onClick={() => setActiveTab("orders")}
+                      className="text-xs text-[#6B2C3A] hover:underline underline-offset-4"
+                    >
+                      View all orders
                     </button>
                   </div>
-                )}
-              </div>
-            </>
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <div>
+                      <span className="font-medium">
+                        Order #{latestOrder.id.slice(0, 8).toUpperCase()}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {" "}
+                        ·{" "}
+                        {new Date(latestOrder.created_at).toLocaleDateString("en-GB", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}{" "}
+                        · {gbp(Number(latestOrder.total_amount))}
+                      </span>
+                    </div>
+                    <span className="text-[11px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full border bg-[#6B2C3A]/5 text-[#6B2C3A] border-[#6B2C3A]/20 capitalize">
+                      {latestOrder.status === "processing" ? "In production" : latestOrder.status}
+                    </span>
+                  </div>
+                </section>
+              )}
+
+              {/* Profile details */}
+              <section className="bg-white border border-black/10 rounded-md p-5 sm:p-6">
+                <h3 className="font-serif text-xl">Profile details</h3>
+                <p className="text-xs text-muted-foreground mt-1 mb-5">
+                  This name is used on your orders and invoices.
+                </p>
+                <form
+                  onSubmit={handleUpdateProfile}
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                >
+                  <div>
+                    <label htmlFor="profile-name" className="block text-xs font-medium mb-1.5">
+                      Full name
+                    </label>
+                    <input
+                      id="profile-name"
+                      name="name"
+                      defaultValue={displayName}
+                      className="w-full border border-black/15 px-3 py-2.5 text-sm rounded-sm bg-white focus:outline-none focus:border-[#6B2C3A]"
+                      placeholder="Your name"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="profile-email" className="block text-xs font-medium mb-1.5">
+                      Email
+                    </label>
+                    <input
+                      id="profile-email"
+                      value={user.email}
+                      disabled
+                      className="w-full border border-black/10 px-3 py-2.5 text-sm rounded-sm bg-black/[0.03] text-muted-foreground cursor-not-allowed"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <button type="submit" className="btn-primary !py-2.5 !px-6 !text-xs">
+                      Save changes
+                    </button>
+                  </div>
+                </form>
+              </section>
+
+              {/* Measurements */}
+              <section className="bg-white border border-black/10 rounded-md p-5 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="font-serif text-xl">Measurements & tailor slip</h3>
+                    {savedTailorSlip ? (
+                      <div className="text-xs text-muted-foreground mt-2 flex flex-wrap gap-x-5 gap-y-1">
+                        <span>
+                          Ref{" "}
+                          <span className="text-foreground font-medium">
+                            #{savedTailorSlip.refId || "N/A"}
+                          </span>
+                        </span>
+                        <span>
+                          Fit{" "}
+                          <span className="text-foreground font-medium capitalize">
+                            {savedTailorSlip.fitPreference || "Regular"}
+                          </span>
+                        </span>
+                        <span>
+                          Unit{" "}
+                          <span className="text-foreground font-medium capitalize">
+                            {savedTailorSlip.unit || "inches"}
+                          </span>
+                        </span>
+                        {savedTailorSlip.savedAt && (
+                          <span>
+                            Saved {new Date(savedTailorSlip.savedAt).toLocaleDateString("en-GB")}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Save your measurements once and we'll tailor every outfit to fit.
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => navigate({ to: "/measurements" })}
+                    className={`${savedTailorSlip ? "btn-outline" : "btn-primary"} !py-2.5 !px-5 !text-xs shrink-0`}
+                  >
+                    {savedTailorSlip ? "Update measurements" : "Add measurements"}
+                  </button>
+                </div>
+              </section>
+            </div>
           )}
 
           {activeTab === "orders" && (
-            <>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
-                <div>
-                  <h2 className="text-2xl font-serif">Order History</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Track shipments, view detailed invoice receipts, and manage your orders
-                  </p>
-                </div>
+            <div>
+              <div className="mb-6">
+                <h2 className="font-serif text-3xl">My Orders</h2>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Track your orders, download invoices or get help.
+                </p>
               </div>
 
-              <OrderHistoryView
-                orders={orders || []}
-                onOrderCancelled={() => refetchOrders()}
-              />
-            </>
+              <OrderHistoryView orders={orders || []} onOrderCancelled={() => refetchOrders()} />
+            </div>
           )}
 
           {activeTab === "addresses" && (
-            <>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+            <div>
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-6">
                 <div>
-                  <h2 className="text-xl sm:text-2xl font-serif">Saved Addresses</h2>
-                  <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">Manage your delivery and billing addresses</p>
+                  <h2 className="font-serif text-3xl">Addresses</h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Where should we deliver your outfits?
+                  </p>
                 </div>
-                {!isAddingAddress && (
+                {!isAddingAddress && !editingAddress && addresses?.length ? (
                   <button
                     onClick={startAddAddress}
-                    className="btn-primary !py-2.5 !px-4 !text-xs flex items-center justify-center gap-1.5 w-full sm:w-auto"
+                    className="btn-primary !py-2.5 !px-5 !text-xs inline-flex items-center justify-center gap-1.5 w-full sm:w-auto"
                   >
                     <Plus className="size-3.5" />
-                    + Add New Address
+                    Add address
                   </button>
-                )}
+                ) : null}
               </div>
 
               {(isAddingAddress || editingAddress) && (
                 <div
                   ref={addressFormRef as any}
-                  className="border p-4 sm:p-6 md:p-8 rounded-lg mb-8 bg-card shadow-sm max-w-2xl transition-all"
+                  className="bg-white border border-black/10 rounded-md p-5 sm:p-6 md:p-8 mb-6"
                 >
-                  <div className="flex items-center justify-between pb-4 mb-6 border-b">
-                    <div>
-                      <h3 className="font-serif font-medium text-lg sm:text-xl">
-                        {editingAddress ? `Edit Address` : "Add New Delivery Address"}
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {editingAddress ? `Editing details for ${editingAddress.full_name}` : "Enter delivery destination details"}
-                      </p>
-                    </div>
+                  <div className="pb-4 mb-6 border-b border-black/5">
+                    <h3 className="font-serif text-xl">
+                      {editingAddress ? "Edit address" : "New address"}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {editingAddress
+                        ? `Editing details for ${editingAddress.full_name}`
+                        : "Enter the delivery details"}
+                    </p>
                   </div>
 
                   <AddressForm
@@ -667,122 +709,119 @@ function ProfilePage() {
               )}
 
               {!addresses?.length ? (
-                <div className="p-6 sm:p-8 border rounded-lg text-center bg-card">
-                  <p className="text-sm text-muted-foreground mb-4">You haven't saved any addresses yet.</p>
-                  {!isAddingAddress && (
+                !isAddingAddress && (
+                  <div className="py-14 text-center space-y-3 bg-white border border-dashed border-black/15 rounded-md">
+                    <MapPin className="size-8 text-muted-foreground/40 mx-auto" />
+                    <h3 className="font-serif text-xl">No saved addresses</h3>
+                    <p className="text-xs text-muted-foreground">
+                      Add one now to check out faster.
+                    </p>
                     <button
                       onClick={startAddAddress}
-                      className="btn-primary !py-2.5 !px-4 !text-xs w-full sm:w-auto"
+                      className="btn-primary !py-2.5 !px-5 !text-xs inline-flex items-center gap-1.5"
                     >
-                      + Add Your First Address
+                      <Plus className="size-3.5" />
+                      Add address
                     </button>
-                  )}
-                </div>
+                  </div>
+                )
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {addresses.map((address) => {
                     const isCurrentlyEditing = editingAddress?.id === address.id;
                     const isDeletingThis = deletingAddressId === address.id;
-                    const isDefaultAddress = Boolean(address.is_default) || localStorage.getItem(`default_addr_${user.id}`) === address.id;
+                    const isDefaultAddress =
+                      Boolean(address.is_default) || defaultAddressId === address.id;
+                    const TypeIcon =
+                      address.type === "Home" ? Home : address.type === "Work" ? Briefcase : MapPin;
 
                     return (
                       <div
                         key={address.id}
-                        className={`border p-6 rounded-lg relative group bg-card transition-all ${
+                        className={`bg-white border rounded-md p-5 flex flex-col transition-colors ${
                           isCurrentlyEditing
-                            ? "border-primary ring-2 ring-primary/20 shadow-md"
+                            ? "border-[#6B2C3A] ring-2 ring-[#6B2C3A]/15"
                             : isDefaultAddress
-                            ? "border-[#6B2C3A]/40 ring-1 ring-[#6B2C3A]/20"
-                            : "hover:border-primary/40"
+                              ? "border-[#6B2C3A]/40"
+                              : "border-black/10 hover:border-black/25"
                         }`}
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="font-medium text-base flex items-center gap-2">
-                            <span>{address.full_name}</span>
-                            {isDefaultAddress && (
-                              <span className="text-[10px] font-semibold tracking-wider uppercase bg-[#6B2C3A] text-white px-2 py-0.5 rounded flex items-center gap-1">
-                                <Star className="size-2.5 fill-current" /> Default
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-1.5">
-                            {isCurrentlyEditing && (
-                              <span className="text-[10px] font-medium uppercase bg-primary text-primary-foreground px-2 py-0.5 rounded">
-                                Editing
-                              </span>
-                            )}
-                            <span className="text-xs uppercase bg-muted px-2 py-1 rounded flex items-center gap-1">
-                              {address.type === "Home" ? <Home className="size-3" /> : address.type === "Work" ? <Briefcase className="size-3" /> : <MapPin className="size-3" />}
-                              {address.type}
+                        <div className="flex items-start justify-between gap-2 mb-3">
+                          <span className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-wider text-muted-foreground">
+                            <TypeIcon className="size-3.5" />
+                            {address.type || "Address"}
+                          </span>
+                          {isDefaultAddress && (
+                            <span className="inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-[#6B2C3A] bg-[#6B2C3A]/[0.07] border border-[#6B2C3A]/20 px-2 py-0.5 rounded-full">
+                              <Star className="size-2.5 fill-current" /> Default
                             </span>
-                          </div>
+                          )}
                         </div>
 
-                        <div className="text-sm text-muted-foreground space-y-1">
+                        <p className="font-medium">{address.full_name}</p>
+                        <div className="text-sm text-muted-foreground leading-relaxed mt-1 flex-1">
                           <p>{address.street}</p>
-                          {address.apartment && (
-                            <p className="text-xs opacity-90">{address.apartment}</p>
-                          )}
+                          {address.apartment && <p>{address.apartment}</p>}
                           <p>
-                            {address.city}, {address.state} {address.zip}
+                            {address.city}
+                            {address.state ? `, ${address.state}` : ""} {address.zip}
                           </p>
                           <p>{address.country}</p>
-                          <p className="mt-2 text-foreground/80 font-mono text-xs">
-                            Phone: {address.phone}
-                          </p>
+                          {address.phone && (
+                            <p className="mt-2 text-xs text-foreground/70">{address.phone}</p>
+                          )}
                         </div>
 
-                        <div className="mt-4 pt-4 border-t flex justify-between items-center text-sm min-h-[42px]">
+                        <div className="mt-4 pt-3 border-t border-black/5 flex items-center justify-between gap-2 text-xs min-h-[38px]">
                           {confirmDeleteId === address.id ? (
-                            <div className="flex items-center justify-between w-full bg-destructive/5 border border-destructive/20 p-2 rounded">
-                              <span className="text-xs text-destructive font-medium">Delete address?</span>
+                            <div className="flex items-center justify-between w-full gap-2">
+                              <span className="text-destructive font-medium">
+                                Remove this address?
+                              </span>
                               <div className="flex gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmDeleteId(null)}
+                                  className="border border-black/15 px-2.5 py-1 rounded-sm hover:bg-black/5"
+                                >
+                                  Keep
+                                </button>
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteAddress(address.id)}
                                   disabled={isDeletingThis}
-                                  className="text-xs bg-destructive text-destructive-foreground px-2.5 py-1 rounded hover:opacity-90 font-medium flex items-center gap-1"
+                                  className="bg-destructive text-white px-2.5 py-1 rounded-sm hover:opacity-90 inline-flex items-center gap-1"
                                 >
                                   {isDeletingThis && <Loader2 className="size-3 animate-spin" />}
-                                  {isDeletingThis ? "Deleting..." : "Yes, Delete"}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setConfirmDeleteId(null)}
-                                  className="text-xs border px-2 py-1 rounded hover:bg-muted font-medium"
-                                >
-                                  Cancel
+                                  {isDeletingThis ? "Removing..." : "Remove"}
                                 </button>
                               </div>
                             </div>
                           ) : (
                             <>
-                              <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-4 font-medium">
                                 <button
                                   type="button"
                                   onClick={() => startEditAddress(address)}
-                                  className={`text-sm font-medium flex items-center gap-1.5 transition-colors ${
-                                    isCurrentlyEditing ? "text-primary font-semibold" : "text-primary hover:underline"
-                                  }`}
+                                  className="text-[#6B2C3A] hover:underline underline-offset-4 inline-flex items-center gap-1"
                                 >
-                                  <Edit2 className="size-3.5" />
-                                  {isCurrentlyEditing ? "Editing..." : "Edit"}
+                                  <Edit2 className="size-3" />
+                                  {isCurrentlyEditing ? "Editing" : "Edit"}
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => setConfirmDeleteId(address.id)}
-                                  className="text-destructive hover:underline text-sm font-medium flex items-center gap-1.5"
+                                  className="text-destructive/80 hover:text-destructive hover:underline underline-offset-4 inline-flex items-center gap-1"
                                 >
-                                  <Trash2 className="size-3.5" />
+                                  <Trash2 className="size-3" />
                                   Remove
                                 </button>
                               </div>
-
                               {!isDefaultAddress && (
                                 <button
                                   type="button"
                                   onClick={() => handleSetDefaultAddress(address.id)}
-                                  className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                                  className="text-muted-foreground hover:text-foreground underline underline-offset-4"
                                 >
                                   Set as default
                                 </button>
@@ -795,9 +834,9 @@ function ProfilePage() {
                   })}
                 </div>
               )}
-            </>
+            </div>
           )}
-        </div>
+        </main>
       </div>
     </div>
   );
