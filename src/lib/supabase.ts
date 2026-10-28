@@ -916,6 +916,10 @@ function createMockSupabase() {
         return { data: id, error: null };
       }
 
+      if (funcName === "admin_export_addresses") {
+        return { data: getStorage<Record<string, unknown>[]>("addresses", []), error: null };
+      }
+
       if (funcName === "admin_delete_product") {
         const list = getStorage<Record<string, unknown>[]>("products", []);
         setStorage(

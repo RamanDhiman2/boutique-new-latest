@@ -16,6 +16,11 @@ export type SiteSettings = {
   instagramUrl: string;
   tiktokUrl: string;
   announcementText: string;
+  /** Admin → Settings → Maintenance: customers see the "back soon" page */
+  maintenanceEnabled: boolean;
+  maintenanceMessage: string;
+  /** ISO date-time or "" */
+  maintenanceUntil: string;
 };
 
 export const DEFAULT_SITE_SETTINGS: SiteSettings = {
@@ -30,6 +35,10 @@ export const DEFAULT_SITE_SETTINGS: SiteSettings = {
   instagramUrl: "https://www.instagram.com/sohnimutiyaarofficial_",
   tiktokUrl: "https://www.tiktok.com/@sohnimutiyaarofficial_",
   announcementText: "Custom Designs Available • Made to Measure Elegance",
+  maintenanceEnabled: false,
+  maintenanceMessage:
+    "We're updating our boutique and will be back very soon. For orders or questions, message us on WhatsApp.",
+  maintenanceUntil: "",
 };
 
 let current: SiteSettings = DEFAULT_SITE_SETTINGS;

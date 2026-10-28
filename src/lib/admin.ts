@@ -223,6 +223,11 @@ export async function saveSiteSettings(settings: SiteSettings) {
     instagram_url: settings.instagramUrl.trim(),
     tiktok_url: settings.tiktokUrl.trim(),
     announcement_text: settings.announcementText.trim(),
+    maintenance_enabled: settings.maintenanceEnabled,
+    maintenance_message: settings.maintenanceMessage.trim(),
+    maintenance_until: settings.maintenanceUntil
+      ? new Date(settings.maintenanceUntil).toISOString()
+      : null,
     updated_at: new Date().toISOString(),
   };
   if (!row.site_name) throw new Error("Store name is required");
@@ -231,7 +236,20 @@ export async function saveSiteSettings(settings: SiteSettings) {
   if (row.whatsapp_number.length < 8)
     throw new Error("Please enter the WhatsApp number with country code");
 
-  const res = await supabase.from("site_settings").update(row).eq("id", 1).select();
+  let res = await supabase.from("site_settings").update(row).eq("id", 1).select();
+  // Database not upgraded yet (maintenance migration not run): save the rest
+  if (res.error && /maintenance_/.test(res.error.message || "")) {
+    if (settings.maintenanceEnabled) {
+      throw new Error(
+        "Maintenance mode needs the 20261101_maintenance_export.sql migration to be run first",
+      );
+    }
+    const { maintenance_enabled, maintenance_message, maintenance_until, ...legacyRow } = row;
+    void maintenance_enabled;
+    void maintenance_message;
+    void maintenance_until;
+    res = await supabase.from("site_settings").update(legacyRow).eq("id", 1).select();
+  }
   const updated = unwrap<unknown>(res);
   const hasRow = Array.isArray(updated) ? updated.length > 0 : Boolean(updated);
   if (!hasRow) {
@@ -402,7 +420,7 @@ export function ordersToCsv(orders: AdminOrder[], productName: (id: string) => s
   const cell = (v: unknown) => {
     const s = v == null ? "" : String(v);
     // Quote everything; neutralise spreadsheet formulas
-    const safe = /^[=+\-@]/.test(s) ? `'${s}` : s;
+    const safe = /^[=+\-@]/.test(s) && !/^[+-]?\d/.test(s) ? `'${s}` : s;
     return `"${safe.replace(/"/g, '""')}"`;
   };
   const header = [
@@ -445,4 +463,93 @@ export function ordersToCsv(orders: AdminOrder[], productName: (id: string) => s
     ].map(cell);
   });
   return [header.map(cell), ...rows].map((r) => r.join(",")).join("\r\n");
+}
+
+// ---------------------------------------------------------------------------
+// Data export (backup / moving to another system)
+// ---------------------------------------------------------------------------
+
+export type ExportDataset =
+  "orders" | "customers" | "products" | "categories" | "reviews" | "addresses" | "settings";
+
+export const EXPORT_DATASETS: { id: ExportDataset; label: string; hint: string }[] = [
+  {
+    id: "orders",
+    label: "Orders",
+    hint: "All orders with items, address, payment and refund details",
+  },
+  {
+    id: "customers",
+    label: "Customers",
+    hint: "Accounts with email, name, sign-up date and order totals",
+  },
+  { id: "products", label: "Products", hint: "Prices, descriptions, categories and photo links" },
+  { id: "categories", label: "Categories", hint: "Collections and their descriptions" },
+  { id: "reviews", label: "Reviews", hint: "Ratings, comments and store replies" },
+  { id: "addresses", label: "Saved addresses", hint: "Customers' address books" },
+  { id: "settings", label: "Website settings", hint: "Store details, SEO and page titles" },
+];
+
+async function selectAll(table: string): Promise<Record<string, unknown>[]> {
+  const data = unwrap<Record<string, unknown>[] | null>(await supabase.from(table).select("*"));
+  return Array.isArray(data) ? data : [];
+}
+
+export async function fetchExportData(dataset: ExportDataset): Promise<Record<string, unknown>[]> {
+  switch (dataset) {
+    case "orders": {
+      const data = unwrap<Record<string, unknown>[] | null>(
+        await supabase.rpc("admin_list_orders", { p_include_unpaid: true, p_limit: 5000 }),
+      );
+      return Array.isArray(data) ? data : [];
+    }
+    case "customers":
+      return (await fetchCustomers()) as unknown as Record<string, unknown>[];
+    case "addresses": {
+      const data = unwrap<Record<string, unknown>[] | null>(
+        await supabase.rpc("admin_export_addresses", {}),
+      );
+      return Array.isArray(data) ? data : [];
+    }
+    case "products":
+      return selectAll("products");
+    case "categories":
+      return selectAll("categories");
+    case "reviews":
+      return selectAll("product_reviews");
+    case "settings": {
+      const [settings, pages] = await Promise.all([
+        selectAll("site_settings"),
+        selectAll("page_seo"),
+      ]);
+      return [
+        ...settings.map((r) => ({ type: "site_settings", ...r })),
+        ...pages.map((r) => ({ type: "page_seo", ...r })),
+      ];
+    }
+  }
+}
+
+/** Flat CSV of any rows; nested values (items, address, photos) are written as JSON text. */
+export function rowsToCsv(rows: Record<string, unknown>[]): string {
+  const columns = Array.from(new Set(rows.flatMap((r) => Object.keys(r))));
+  const cell = (v: unknown) => {
+    const s = v == null ? "" : typeof v === "object" ? JSON.stringify(v) : String(v);
+    const safe = /^[=+\-@]/.test(s) && !/^[+-]?\d/.test(s) ? `'${s}` : s;
+    return `"${safe.replace(/"/g, '""')}"`;
+  };
+  return [
+    columns.map(cell).join(","),
+    ...rows.map((r) => columns.map((c) => cell(r[c])).join(",")),
+  ].join("\r\n");
+}
+
+export function downloadFile(filename: string, content: string, type: string) {
+  const blob = new Blob([type.startsWith("text/csv") ? "﻿" + content : content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

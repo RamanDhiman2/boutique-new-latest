@@ -18,6 +18,7 @@ import { AuthProvider } from "@/lib/auth";
 import { Header, Footer } from "@/components/site/Chrome";
 import { WhatsAppFloatingButton } from "@/components/site/WhatsAppButton";
 import { SEOManager } from "@/components/site/SEOManager";
+import { MaintenanceGate } from "@/components/site/Maintenance";
 import { siteSettingsQueryOptions } from "@/lib/siteSettings";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -135,12 +136,14 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <CartProvider>
-          <Header />
-          <main className="min-h-[70vh] w-full overflow-x-clip">
-            <Outlet />
-          </main>
-          <Footer />
-          {!isAdminPage && <WhatsAppFloatingButton />}
+          <MaintenanceGate>
+            <Header />
+            <main className="min-h-[70vh] w-full overflow-x-clip">
+              <Outlet />
+            </main>
+            <Footer />
+            {!isAdminPage && <WhatsAppFloatingButton />}
+          </MaintenanceGate>
           <SEOManager />
           <Toaster position="bottom-left" />
         </CartProvider>

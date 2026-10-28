@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { deletePageSeo, savePageSeo, saveSiteSettings, uploadProductImage } from "@/lib/admin";
 import { usePageSeo, useSiteSettings, type PageSeo } from "@/lib/siteSettings";
 import { setSiteSettings, type SiteSettings } from "@/lib/siteSettingsStore";
+import { AdminExport } from "./AdminExport";
 
 // Public pages whose search title/description can be customised
 const SEO_PAGES: { path: string; label: string }[] = [
@@ -55,6 +56,16 @@ function CharCount({ value, ideal }: { value: string; ideal: number }) {
   );
 }
 
+/** ISO string → value for <input type="datetime-local"> in local time */
+function toLocalInput(value: string) {
+  if (!value) return "";
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(value)) return value;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export function AdminSettings() {
   const queryClient = useQueryClient();
   const saved = useSiteSettings();
@@ -103,6 +114,62 @@ export function AdminSettings() {
 
   return (
     <div className="space-y-6 max-w-3xl">
+      {/* Maintenance mode */}
+      <section
+        className={`border rounded-md p-5 sm:p-6 space-y-4 ${
+          form.maintenanceEnabled ? "bg-amber-50 border-amber-300" : "bg-white border-black/10"
+        }`}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="font-serif text-xl">Maintenance mode</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Customers see a "We'll be back soon" page and cannot place orders. You (admin) still
+              see the full site.
+            </p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={form.maintenanceEnabled}
+            aria-label="Maintenance mode"
+            onClick={() => setForm((f) => ({ ...f, maintenanceEnabled: !f.maintenanceEnabled }))}
+            className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+              form.maintenanceEnabled ? "bg-amber-600" : "bg-black/20"
+            }`}
+          >
+            <span
+              className={`inline-block size-5 rounded-full bg-white shadow transition-transform ${
+                form.maintenanceEnabled ? "translate-x-[22px]" : "translate-x-0.5"
+              }`}
+            />
+          </button>
+        </div>
+        <Field id="s-mmsg" label="Message for customers">
+          <textarea
+            id="s-mmsg"
+            rows={3}
+            value={form.maintenanceMessage}
+            onChange={set("maintenanceMessage")}
+            className={`${inputClass} resize-y`}
+          />
+        </Field>
+        <Field id="s-muntil" label="Back by (optional)" hint="Shown on the maintenance page">
+          <input
+            id="s-muntil"
+            type="datetime-local"
+            value={toLocalInput(form.maintenanceUntil)}
+            onChange={(e) => setForm((f) => ({ ...f, maintenanceUntil: e.target.value }))}
+            className={`${inputClass} sm:max-w-xs`}
+          />
+        </Field>
+        {form.maintenanceEnabled !== saved.maintenanceEnabled && (
+          <p className="text-xs font-medium text-amber-800">
+            Press "Save settings" to {form.maintenanceEnabled ? "close" : "reopen"} the shop.
+          </p>
+        )}
+      </section>
+
       {/* Store details */}
       <section className="bg-white border border-black/10 rounded-md p-5 sm:p-6 space-y-4">
         <div>
@@ -296,6 +363,8 @@ export function AdminSettings() {
           ))}
         </ul>
       </section>
+
+      <AdminExport />
     </div>
   );
 }

@@ -35,6 +35,9 @@ export function mapSettingsRow(row: Record<string, unknown> | null | undefined):
     instagramUrl: pick(row["instagram_url"], d.instagramUrl),
     tiktokUrl: pick(row["tiktok_url"], d.tiktokUrl),
     announcementText: pick(row["announcement_text"], d.announcementText),
+    maintenanceEnabled: row["maintenance_enabled"] === true,
+    maintenanceMessage: pick(row["maintenance_message"], d.maintenanceMessage),
+    maintenanceUntil: typeof row["maintenance_until"] === "string" ? row["maintenance_until"] : "",
   };
 }
 
