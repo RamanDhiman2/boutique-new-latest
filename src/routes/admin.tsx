@@ -10,6 +10,7 @@ import {
   ArrowLeft,
   Shirt,
   Settings,
+  Users,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { fetchAdminOrders, useIsAdmin } from "@/lib/admin";
@@ -18,13 +19,19 @@ import { AdminOrders } from "@/components/admin/AdminOrders";
 import { AdminReviews } from "@/components/admin/AdminReviews";
 import { AdminProducts } from "@/components/admin/AdminProducts";
 import { AdminSettings } from "@/components/admin/AdminSettings";
+import { AdminCustomers } from "@/components/admin/AdminCustomers";
 
-type AdminTab = "dashboard" | "orders" | "products" | "reviews" | "settings";
+type AdminTab = "dashboard" | "orders" | "products" | "customers" | "reviews" | "settings";
 
 export const Route = createFileRoute("/admin")({
   validateSearch: (search: Record<string, unknown>): { tab?: AdminTab } => {
     const tab = search["tab"];
-    return tab === "orders" || tab === "products" || tab === "reviews" || tab === "settings" || tab === "dashboard"
+    return tab === "orders" ||
+      tab === "products" ||
+      tab === "customers" ||
+      tab === "reviews" ||
+      tab === "settings" ||
+      tab === "dashboard"
       ? { tab }
       : {};
   },
@@ -41,6 +48,7 @@ const TABS: { id: AdminTab; label: string; icon: typeof Package }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "orders", label: "Orders", icon: Package },
   { id: "products", label: "Products", icon: Shirt },
+  { id: "customers", label: "Customers", icon: Users },
   { id: "reviews", label: "Reviews", icon: MessageSquare },
   { id: "settings", label: "Settings", icon: Settings },
 ];
@@ -151,6 +159,11 @@ function AdminPage() {
         <AdminProducts />
       ) : tab === "settings" ? (
         <AdminSettings />
+      ) : tab === "customers" ? (
+        <AdminCustomers
+          orders={orders}
+          onOpenOrder={() => navigate({ to: "/admin", search: { tab: "orders" } })}
+        />
       ) : (
         <AdminReviews />
       )}

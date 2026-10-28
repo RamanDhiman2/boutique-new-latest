@@ -177,6 +177,51 @@ serve(async (req) => {
         break
       }
 
+      case 'charge.refunded': {
+        // Refunds from the admin panel or the Stripe dashboard (full or partial)
+        const charge = event.data.object as Stripe.Charge
+        const piId = typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent?.id
+        if (!piId) break
+
+        const fullyRefunded = charge.amount_refunded >= charge.amount
+        const { error: refundError } = await supabaseAdmin
+          .from('orders')
+          .update({
+            refunded_amount: charge.amount_refunded / 100,
+            refunded_at: new Date().toISOString(),
+            ...(fullyRefunded ? { payment_status: 'refunded' } : {}),
+          })
+          .eq('payment_provider_id', piId)
+
+        if (refundError) {
+          console.error(`Failed to record refund for ${piId}:`, refundError)
+          throw new Error('Database update failed')
+        }
+        console.log(`Recorded refund of ${charge.amount_refunded / 100} for payment ${piId}`)
+        break
+      }
+
+      case 'charge.dispute.created':
+      case 'charge.dispute.updated':
+      case 'charge.dispute.closed': {
+        // Chargebacks: shown on the order in the admin panel
+        const dispute = event.data.object as Stripe.Dispute
+        const piId = typeof dispute.payment_intent === 'string' ? dispute.payment_intent : dispute.payment_intent?.id
+        if (!piId) break
+
+        const { error: disputeError } = await supabaseAdmin
+          .from('orders')
+          .update({ dispute_status: dispute.status })
+          .eq('payment_provider_id', piId)
+
+        if (disputeError) {
+          console.error(`Failed to record dispute for ${piId}:`, disputeError)
+          throw new Error('Database update failed')
+        }
+        console.log(`Dispute ${dispute.status} recorded for payment ${piId}`)
+        break
+      }
+
       default: {
         console.log(`Unhandled Stripe event type: ${event.type}`)
         break

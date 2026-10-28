@@ -1,9 +1,10 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2, Search, Star, Trash2, BadgeCheck } from "lucide-react";
+import { Loader2, Search, Star, Trash2, BadgeCheck, Pencil, Plus, Store } from "lucide-react";
 import { toast } from "sonner";
 import { useProductLookup } from "@/lib/catalogService";
 import { deleteReview, fetchAllReviews } from "@/lib/admin";
+import { AddReviewForm, ReviewEditor } from "./AdminReviewForms";
 
 type RatingFilter = "all" | "low" | "verified";
 
@@ -14,6 +15,8 @@ export function AdminReviews() {
   const [query, setQuery] = useState("");
   const [confirmId, setConfirmId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
 
   const reviews = useMemo(() => reviewsQuery.data ?? [], [reviewsQuery.data]);
 
@@ -88,18 +91,36 @@ export function AdminReviews() {
             </button>
           ))}
         </div>
-        <div className="relative lg:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search reviews or products"
-            aria-label="Search reviews"
-            className="w-full pl-9 pr-3 py-2 text-xs rounded-sm border border-black/15 bg-white focus:outline-none focus:border-[#6B2C3A]"
-          />
+        <div className="flex gap-2">
+          <div className="relative flex-1 lg:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search reviews or products"
+              aria-label="Search reviews"
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-sm border border-black/15 bg-white focus:outline-none focus:border-[#6B2C3A]"
+            />
+          </div>
+          <button
+            onClick={() => setAdding(true)}
+            className="btn-primary !py-2 !px-4 !text-xs inline-flex items-center gap-1.5 shrink-0"
+          >
+            <Plus className="size-3.5" />
+            Add review
+          </button>
         </div>
       </div>
+
+      {adding && (
+        <AddReviewForm
+          onDone={(saved) => {
+            setAdding(false);
+            if (saved) reviewsQuery.refetch();
+          }}
+        />
+      )}
 
       {visible.length === 0 ? (
         <div className="bg-white border border-black/10 rounded-md py-16 text-center text-sm text-muted-foreground">
@@ -113,41 +134,74 @@ export function AdminReviews() {
               <li key={r.id} className="bg-white border border-black/10 rounded-md p-4 sm:p-5">
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="flex" aria-label={`${r.rating} out of 5 stars`}>
-                        {[1, 2, 3, 4, 5].map((s) => (
-                          <Star
-                            key={s}
-                            className={`size-3.5 ${s <= r.rating ? "fill-[#C9A227] text-[#C9A227]" : "text-black/15"}`}
-                          />
-                        ))}
-                      </span>
-                      <span className="text-sm font-medium">{r.title || "Customer review"}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-2 whitespace-pre-line break-words">
-                      {r.comment}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5 flex-wrap">
-                      <span className="text-foreground">{r.author_name}</span>
-                      {r.verified_purchase && (
-                        <span className="inline-flex items-center gap-0.5 text-emerald-700">
-                          <BadgeCheck className="size-3.5" /> Verified buyer
-                        </span>
-                      )}
-                      <span>·</span>
-                      <span>{productName}</span>
-                      <span>·</span>
-                      <span>
-                        {new Date(r.created_at).toLocaleDateString("en-GB", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
-                      </span>
-                    </p>
+                    {editingId === r.id ? (
+                      <ReviewEditor
+                        review={r}
+                        onDone={(saved) => {
+                          setEditingId(null);
+                          if (saved) reviewsQuery.refetch();
+                        }}
+                      />
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="flex" aria-label={`${r.rating} out of 5 stars`}>
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <Star
+                                key={s}
+                                className={`size-3.5 ${s <= r.rating ? "fill-[#C9A227] text-[#C9A227]" : "text-black/15"}`}
+                              />
+                            ))}
+                          </span>
+                          <span className="text-sm font-medium">
+                            {r.title || "Customer review"}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-2 whitespace-pre-line break-words">
+                          {r.comment}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-3 flex items-center gap-1.5 flex-wrap">
+                          <span className="text-foreground">{r.author_name}</span>
+                          {r.verified_purchase && (
+                            <span className="inline-flex items-center gap-0.5 text-emerald-700">
+                              <BadgeCheck className="size-3.5" /> Verified buyer
+                            </span>
+                          )}
+                          <span>·</span>
+                          <span>{productName}</span>
+                          <span>·</span>
+                          <span>
+                            {new Date(r.created_at).toLocaleDateString("en-GB", {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            })}
+                          </span>
+                        </p>
+                        {r.admin_reply && (
+                          <div className="mt-3 border-l-2 border-[#6B2C3A]/40 pl-3">
+                            <p className="text-[11px] uppercase tracking-wider text-[#6B2C3A] inline-flex items-center gap-1">
+                              <Store className="size-3" /> Store reply
+                            </p>
+                            <p className="text-sm text-muted-foreground mt-0.5 whitespace-pre-line">
+                              {r.admin_reply}
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
 
-                  <div className="shrink-0">
+                  <div className="shrink-0 flex items-start gap-4">
+                    {editingId !== r.id && confirmId !== r.id && (
+                      <button
+                        onClick={() => setEditingId(r.id)}
+                        className="text-xs text-[#6B2C3A] hover:underline inline-flex items-center gap-1"
+                      >
+                        <Pencil className="size-3.5" />
+                        {r.admin_reply ? "Edit" : "Edit / Reply"}
+                      </button>
+                    )}
                     {confirmId === r.id ? (
                       <div className="flex items-center gap-2 text-xs">
                         <span className="text-destructive">Delete?</span>

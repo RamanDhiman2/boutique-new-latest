@@ -484,6 +484,17 @@ export function ProductReviews({ productId, productName }: ProductReviewsProps) 
                   <span>By</span>
                   <span className="font-semibold text-foreground">{rev.author_name}</span>
                 </div>
+
+                {rev.admin_reply && (
+                  <div className="mt-3 ml-1 pl-3 border-l-2 border-primary/30">
+                    <p className="text-[0.62rem] uppercase tracking-wider font-semibold text-primary">
+                      Reply from SohniMutiyaar By CC
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-relaxed mt-1 whitespace-pre-line">
+                      {rev.admin_reply}
+                    </p>
+                  </div>
+                )}
               </div>
             ))
           )}

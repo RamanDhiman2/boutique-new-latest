@@ -235,6 +235,8 @@ export interface ProductReviewRecord {
   comment: string;
   verified_purchase?: boolean;
   created_at: string;
+  admin_reply?: string | null;
+  admin_reply_at?: string | null;
 }
 
 export interface AuthErrorLike {
@@ -801,7 +803,9 @@ function createMockSupabase() {
         const includeUnpaid = Boolean(args["p_include_unpaid"]);
         return {
           data: orders
-            .filter((o) => includeUnpaid || ["captured", "refunded"].includes(o.payment_status || ""))
+            .filter(
+              (o) => includeUnpaid || ["captured", "refunded"].includes(o.payment_status || ""),
+            )
             .map((o) => ({ ...o, customer_email: email })),
           error: null,
         };
@@ -820,7 +824,9 @@ function createMockSupabase() {
         else delete order.tracking_number;
         if (order.status === "cancelled") {
           order.cancellation_reason =
-            (args["p_cancellation_reason"] as string) || order.cancellation_reason || "Cancelled by store";
+            (args["p_cancellation_reason"] as string) ||
+            order.cancellation_reason ||
+            "Cancelled by store";
         }
         setStorage("orders", orders);
         return { data: null, error: null };
@@ -833,6 +839,81 @@ function createMockSupabase() {
           reviews.filter((r) => r.id !== args["p_review_id"]),
         );
         return { data: null, error: null };
+      }
+
+      if (funcName === "admin_set_order_note" || funcName === "admin_update_order_address") {
+        const orders = getStorage<OrderRecord[]>("orders", []);
+        const order = orders.find((o) => o.id === args["p_order_id"]) as
+          (OrderRecord & { admin_notes?: string }) | undefined;
+        if (!order) return { data: null, error: { message: "Order not found" } };
+        if (funcName === "admin_set_order_note") {
+          order.admin_notes = String(args["p_note"] ?? "").trim();
+        } else {
+          order.shipping_address = {
+            ...(order.shipping_address || {}),
+            ...(args["p_address"] as Record<string, string>),
+          };
+        }
+        setStorage("orders", orders);
+        return { data: null, error: null };
+      }
+
+      if (funcName === "admin_list_customers") {
+        const user = getSession()?.user;
+        const orders = getStorage<OrderRecord[]>("orders", []).filter((o) =>
+          ["captured", "refunded"].includes(o.payment_status || ""),
+        );
+        const customers = user
+          ? [
+              {
+                id: user.id,
+                email: user.email,
+                full_name: (user.user_metadata as Record<string, string>)?.["full_name"] ?? null,
+                phone: null,
+                created_at: user.created_at,
+                last_sign_in_at: new Date().toISOString(),
+                is_blocked: false,
+                is_admin: true,
+                order_count: orders.length,
+                total_spent: orders.reduce((n, o) => n + Number(o.total_amount), 0),
+                last_order_at: orders[0]?.created_at ?? null,
+              },
+              ...getStorage<Record<string, unknown>[]>("mock_customers", []),
+            ]
+          : [];
+        return { data: customers, error: null };
+      }
+
+      if (funcName === "admin_update_review") {
+        const reviews = getStorage<Record<string, unknown>[]>("product_reviews", []);
+        const review = reviews.find((r) => r["id"] === args["p_review_id"]);
+        if (!review) return { data: null, error: { message: "Review not found" } };
+        review["rating"] = args["p_rating"];
+        review["title"] = args["p_title"];
+        review["comment"] = args["p_comment"];
+        const reply = String(args["p_admin_reply"] ?? "").trim();
+        if (reply !== (review["admin_reply"] ?? ""))
+          review["admin_reply_at"] = reply ? new Date().toISOString() : null;
+        review["admin_reply"] = reply || null;
+        setStorage("product_reviews", reviews);
+        return { data: null, error: null };
+      }
+
+      if (funcName === "admin_add_review") {
+        const reviews = getStorage<Record<string, unknown>[]>("product_reviews", []);
+        const id = "rev_" + Math.random().toString(36).slice(2, 9);
+        reviews.unshift({
+          id,
+          product_id: args["p_product_id"],
+          author_name: args["p_author_name"],
+          rating: args["p_rating"],
+          title: args["p_title"],
+          comment: args["p_comment"],
+          verified_purchase: false,
+          created_at: new Date().toISOString(),
+        });
+        setStorage("product_reviews", reviews);
+        return { data: id, error: null };
       }
 
       if (funcName === "admin_delete_product") {

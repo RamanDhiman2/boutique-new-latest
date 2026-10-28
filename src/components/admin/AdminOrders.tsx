@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, Loader2, Copy, Mail, Phone, ChevronRight } from "lucide-react";
+import { Search, Loader2, Copy, Mail, Phone, ChevronRight, Download, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { gbp } from "@/lib/catalog";
 import { useProductLookup } from "@/lib/catalogService";
@@ -7,6 +7,7 @@ import {
   ADMIN_ORDER_STATUSES,
   ADMIN_STATUS_LABELS,
   updateAdminOrder,
+  ordersToCsv,
   type AdminOrder,
   type AdminOrderStatus,
 } from "@/lib/admin";
@@ -17,6 +18,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { OrderAddressEditor, OrderNotes, OrderPayment } from "./AdminOrderExtras";
 
 interface AdminOrdersProps {
   orders: AdminOrder[];
@@ -60,6 +62,13 @@ const formatDate = (iso: string) =>
 
 function StatusPill({ order }: { order: AdminOrder }) {
   const refunded = order.payment_status === "refunded";
+  if (order.dispute_status && !["won", "warning_closed"].includes(order.dispute_status)) {
+    return (
+      <span className="inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border whitespace-nowrap bg-red-600 text-white border-red-600">
+        Dispute
+      </span>
+    );
+  }
   return (
     <span
       className={`inline-block text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border whitespace-nowrap ${
@@ -107,6 +116,18 @@ export function AdminOrders({ orders, onChanged }: AdminOrdersProps) {
   }, [orders, filter, query]);
 
   const selected = orders.find((o) => o.id === selectedId) || null;
+  const findProduct = useProductLookup();
+
+  const downloadCsv = (list: AdminOrder[]) => {
+    const csv = ordersToCsv(list, (id) => findProduct(id)?.name || id);
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-4">
@@ -127,16 +148,28 @@ export function AdminOrders({ orders, onChanged }: AdminOrdersProps) {
             </button>
           ))}
         </div>
-        <div className="relative lg:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Order #, name, email, postcode"
-            aria-label="Search orders"
-            className="w-full pl-9 pr-3 py-2 text-xs rounded-sm border border-black/15 bg-white focus:outline-none focus:border-[#6B2C3A]"
-          />
+        <div className="flex gap-2">
+          <div className="relative flex-1 lg:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Order #, name, email, postcode"
+              aria-label="Search orders"
+              className="w-full pl-9 pr-3 py-2 text-xs rounded-sm border border-black/15 bg-white focus:outline-none focus:border-[#6B2C3A]"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={() => downloadCsv(visible)}
+            disabled={visible.length === 0}
+            className="shrink-0 inline-flex items-center gap-1.5 px-3 py-2 text-xs border border-black/15 bg-white rounded-sm hover:border-black/30 disabled:opacity-50"
+            title="Download the orders shown as a spreadsheet (CSV)"
+          >
+            <Download className="size-3.5" />
+            CSV
+          </button>
         </div>
       </div>
 
@@ -247,6 +280,7 @@ export function AdminOrders({ orders, onChanged }: AdminOrdersProps) {
 }
 
 function OrderDetail({ order, onSaved }: { order: AdminOrder; onSaved: () => void }) {
+  const [editingAddress, setEditingAddress] = useState(false);
   const findProduct = useProductLookup();
   const addr = (order.shipping_address || {}) as Address;
   const initialStatus = (
@@ -357,9 +391,7 @@ function OrderDetail({ order, onSaved }: { order: AdminOrder; onSaved: () => voi
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm leading-snug">{prod?.name || it.product_id}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Qty {it.quantity}
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Qty {it.quantity}</p>
                   </div>
                   <p className="text-sm tabular-nums">
                     {gbp(Number(it.price) * Number(it.quantity))}
@@ -415,11 +447,34 @@ function OrderDetail({ order, onSaved }: { order: AdminOrder; onSaved: () => voi
                 </button>
               )}
             </div>
-            <p className="text-sm whitespace-pre-line text-muted-foreground leading-relaxed">
-              {fullAddress || "No address snapshot"}
-            </p>
+            {editingAddress ? (
+              <OrderAddressEditor
+                order={order}
+                onDone={(saved) => {
+                  setEditingAddress(false);
+                  if (saved) onSaved();
+                }}
+              />
+            ) : (
+              <>
+                <p className="text-sm whitespace-pre-line text-muted-foreground leading-relaxed">
+                  {fullAddress || "No address snapshot"}
+                </p>
+                <button
+                  onClick={() => setEditingAddress(true)}
+                  className="mt-1.5 text-[11px] text-[#6B2C3A] hover:underline inline-flex items-center gap-1"
+                >
+                  <Pencil className="size-3" />
+                  Edit address
+                </button>
+              </>
+            )}
           </div>
         </section>
+
+        <OrderPayment order={order} onChanged={onSaved} />
+
+        <OrderNotes order={order} onSaved={onSaved} />
 
         {/* Fulfilment */}
         <section className="bg-[#FAF9F6] border border-black/5 rounded-md p-4 space-y-4">

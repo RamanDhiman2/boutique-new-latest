@@ -12,7 +12,13 @@ import type { PageSeo } from "./siteSettings";
  * re-checks is_admin(), so hiding the UI is a convenience, not the protection.
  */
 
-export type AdminOrder = OrderRecord & { customer_email?: string | null };
+export type AdminOrder = OrderRecord & {
+  customer_email?: string | null;
+  refunded_amount?: number | null;
+  refunded_at?: string | null;
+  dispute_status?: string | null;
+  admin_notes?: string | null;
+};
 
 export const ADMIN_ORDER_STATUSES = ["processing", "shipped", "delivered", "cancelled"] as const;
 export type AdminOrderStatus = (typeof ADMIN_ORDER_STATUSES)[number];
@@ -220,14 +226,22 @@ export async function saveSiteSettings(settings: SiteSettings) {
     updated_at: new Date().toISOString(),
   };
   if (!row.site_name) throw new Error("Store name is required");
-  if (!/^\S+@\S+\.\S+$/.test(row.contact_email)) throw new Error("Please enter a valid contact email");
-  if (row.whatsapp_number.length < 8) throw new Error("Please enter the WhatsApp number with country code");
+  if (!/^\S+@\S+\.\S+$/.test(row.contact_email))
+    throw new Error("Please enter a valid contact email");
+  if (row.whatsapp_number.length < 8)
+    throw new Error("Please enter the WhatsApp number with country code");
 
   const res = await supabase.from("site_settings").update(row).eq("id", 1).select();
   const updated = unwrap<unknown>(res);
   const hasRow = Array.isArray(updated) ? updated.length > 0 : Boolean(updated);
   if (!hasRow) {
-    unwrap(await supabase.from("site_settings").insert({ id: 1, ...row }).select().single());
+    unwrap(
+      await supabase
+        .from("site_settings")
+        .insert({ id: 1, ...row })
+        .select()
+        .single(),
+    );
   }
 }
 
@@ -242,10 +256,193 @@ export async function savePageSeo(entry: PageSeo) {
   const updated = unwrap<unknown>(res);
   const hasRow = Array.isArray(updated) ? updated.length > 0 : Boolean(updated);
   if (!hasRow) {
-    unwrap(await supabase.from("page_seo").insert({ path: entry.path, ...row }).select().single());
+    unwrap(
+      await supabase
+        .from("page_seo")
+        .insert({ path: entry.path, ...row })
+        .select()
+        .single(),
+    );
   }
 }
 
 export async function deletePageSeo(path: string) {
   unwrap(await supabase.from("page_seo").delete().eq("path", path));
+}
+
+// ---------------------------------------------------------------------------
+// Payments, refunds, customers (admin-actions edge function), notes, addresses
+// ---------------------------------------------------------------------------
+
+async function adminAction<T>(body: Record<string, unknown>): Promise<T> {
+  const res = await supabase.functions.invoke("admin-actions", { body });
+  // Edge function errors carry the JSON body in error.context
+  if (res.error) {
+    let message = res.error.message || "Request failed";
+    const ctx = (res.error as { context?: Response }).context;
+    if (ctx && typeof ctx.json === "function") {
+      try {
+        const payload = await ctx.json();
+        if (payload?.error) message = payload.error;
+      } catch {
+        // keep the generic message
+      }
+    }
+    throw new Error(message);
+  }
+  const data = res.data as (T & { error?: string }) | null;
+  if (data && typeof data === "object" && "error" in data && data.error)
+    throw new Error(data.error);
+  return data as T;
+}
+
+export type PaymentDetails = {
+  payment_intent_id: string;
+  status: string;
+  amount: number;
+  currency: string;
+  created: string;
+  amount_refunded: number;
+  card_brand: string | null;
+  card_last4: string | null;
+  wallet: string | null;
+  receipt_url: string | null;
+  disputed: boolean;
+  dashboard_url: string;
+};
+
+export function fetchPaymentDetails(orderId: string) {
+  return adminAction<PaymentDetails>({ action: "payment_details", order_id: orderId });
+}
+
+export function refundOrder(orderId: string, amount: number | null, reason: string) {
+  return adminAction<{ ok: true; refunded_amount: number; fully_refunded: boolean }>({
+    action: "refund",
+    order_id: orderId,
+    amount,
+    reason,
+  });
+}
+
+export async function setOrderNote(orderId: string, note: string) {
+  unwrap(await supabase.rpc("admin_set_order_note", { p_order_id: orderId, p_note: note }));
+}
+
+export async function updateOrderAddress(orderId: string, address: Record<string, string>) {
+  unwrap(
+    await supabase.rpc("admin_update_order_address", { p_order_id: orderId, p_address: address }),
+  );
+}
+
+export type AdminCustomer = {
+  id: string;
+  email: string | null;
+  full_name: string | null;
+  phone: string | null;
+  created_at: string;
+  last_sign_in_at: string | null;
+  is_blocked: boolean;
+  is_admin: boolean;
+  order_count: number;
+  total_spent: number;
+  last_order_at: string | null;
+};
+
+export async function fetchCustomers(): Promise<AdminCustomer[]> {
+  const data = unwrap<AdminCustomer[] | null>(await supabase.rpc("admin_list_customers", {}));
+  return Array.isArray(data) ? data : [];
+}
+
+export function setCustomerBlocked(userId: string, blocked: boolean) {
+  return adminAction<{ ok: true; blocked: boolean }>({
+    action: "set_blocked",
+    user_id: userId,
+    blocked,
+  });
+}
+
+export async function updateReview(params: {
+  id: string;
+  rating: number;
+  title: string;
+  comment: string;
+  adminReply: string;
+}) {
+  unwrap(
+    await supabase.rpc("admin_update_review", {
+      p_review_id: params.id,
+      p_rating: params.rating,
+      p_title: params.title,
+      p_comment: params.comment,
+      p_admin_reply: params.adminReply,
+    }),
+  );
+}
+
+export async function addStoreReview(params: {
+  productId: string;
+  authorName: string;
+  rating: number;
+  title: string;
+  comment: string;
+}) {
+  unwrap(
+    await supabase.rpc("admin_add_review", {
+      p_product_id: params.productId,
+      p_author_name: params.authorName,
+      p_rating: params.rating,
+      p_title: params.title,
+      p_comment: params.comment,
+    }),
+  );
+}
+
+/** Orders as a CSV file (opens in Excel / Google Sheets). */
+export function ordersToCsv(orders: AdminOrder[], productName: (id: string) => string): string {
+  const cell = (v: unknown) => {
+    const s = v == null ? "" : String(v);
+    // Quote everything; neutralise spreadsheet formulas
+    const safe = /^[=+\-@]/.test(s) ? `'${s}` : s;
+    return `"${safe.replace(/"/g, '""')}"`;
+  };
+  const header = [
+    "Order",
+    "Date",
+    "Status",
+    "Payment",
+    "Total (GBP)",
+    "Refunded (GBP)",
+    "Customer",
+    "Email",
+    "Phone",
+    "Address",
+    "Postcode",
+    "Country",
+    "Items",
+    "Carrier",
+    "Tracking",
+    "Admin notes",
+  ];
+  const rows = orders.map((o) => {
+    const a = (o.shipping_address || {}) as Record<string, string | undefined>;
+    return [
+      o.id.slice(0, 8).toUpperCase(),
+      new Date(o.created_at).toISOString().slice(0, 16).replace("T", " "),
+      o.status,
+      o.payment_status,
+      Number(o.total_amount).toFixed(2),
+      Number(o.refunded_amount || 0).toFixed(2),
+      a["full_name"],
+      o.customer_email,
+      a["phone"],
+      [a["street"], a["apartment"], a["city"], a["state"]].filter(Boolean).join(", "),
+      a["zip"],
+      a["country"],
+      (o.order_items || []).map((it) => `${productName(it.product_id)} x${it.quantity}`).join("; "),
+      o.carrier,
+      o.tracking_number,
+      o.admin_notes,
+    ].map(cell);
+  });
+  return [header.map(cell), ...rows].map((r) => r.join(",")).join("\r\n");
 }
